@@ -17,6 +17,33 @@ for (island in islands) {
   islandList[as.integer(substr(otherCrabList[grep(island,otherCrabList)],6,7))] = island
 }
 
+#Begins analyzing island habitat distribution
+allLocations = data.frame(matrix(ncol=4,nrow=4))
+colnames(allLocations) = c("Cocos","Natives","Scaevola","Sand")
+rownames(allLocations) = islands
+
+#Loops through all islands, imports their QGIS-cropped images, and calculates their habitat ratios
+islandList <- list()
+for (isle in islands) {
+  classedIsle = raster(paste0(isle,".tif"))
+  #Converts classified habitat spatial image into global coordinates
+  r.pts <- rasterToPoints(classedIsle, spatial=TRUE)
+  proj4string(r.pts)
+  islecoordpts <- spTransform(r.pts, CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+  islecoordpts@data <- data.frame(islecoordpts@data, long=coordinates(islecoordpts)[,1],
+                                  lat=coordinates(islecoordpts)[,2])
+  #Removes all duplicates from classified satellite imagery
+  islecoordpts@data = islecoordpts@data[!duplicated(islecoordpts@data[,1:3]),]
+  islandList[[isle]] <- islecoordpts@data
+  colnames(islecoordpts@data) <- c("class","long","lat")
+  #View(islecoordpts@data)
+  totalavailhab = table(islecoordpts@data[,"class"])
+  allLocations[isle,"Cocos"] = totalavailhab[1]/sum(totalavailhab)
+  allLocations[isle,"Natives"] = totalavailhab[2]/sum(totalavailhab)
+  allLocations[isle,"Scaevola"] = totalavailhab[3]/sum(totalavailhab)
+  allLocations[isle,"Sand"] = totalavailhab[4]/sum(totalavailhab)
+}
+
 #Starts off crab tracking files
 crabs2016 = read.csv(paste0(newWD,"/",crabList[1]))[1,]
 crabs2016$CrabNum <- NA
@@ -46,9 +73,9 @@ for (crab in unique(crabs2016$CrabNum)) {
   crab1.spt <- spTransform(crab1.sp,CRS("+proj=utm +zone=3 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"))
   
   #Constructs mcp16 for crab 1 tracks
-  polygon <- mcp16(crab1.spt, percent=95)
+  polygon <- mcp(crab1.spt, percent=95)
   crabHRList[crab] = polygon
-  polygon2 <- mcp16(crab1.spt, percent=50)
+  polygon2 <- mcp(crab1.spt, percent=50)
   crabHRList[crab+fiftyoffset] = polygon2
   
   #Constructs kernel utilization density of crab tracks
@@ -61,12 +88,12 @@ for (crab in unique(crabs2016$CrabNum)) {
   #hrs <- mcp16.area(crab1.sp, percent=seq(50, 100, by = 5)) 
   #plot(hrs) 
   
-  #Plots mcp16 (95/50) over island and crab tracks
+  #Plots mcp (95/50) over island and crab tracks
   #plotRGB(imgtest, r=1, g=2, b=3,stretch="lin", main="mcp16 95/50")
   #plot(polygon, add=TRUE, col = 2)
   #plot(polygon2, add=TRUE, col = 4)
   
-  #Plots kud16 over island and crab tracks
+  #Plots kud over island and crab tracks
   #plotRGB(imgtest, r=1, g=2, b=3,stretch="lin", main="kud16 95/50")
   ver <- getverticeshr(kud16, 95)
   #plot(ver, add=TRUE, col=rainbow(4)[1])
@@ -78,7 +105,7 @@ for (crab in unique(crabs2016$CrabNum)) {
 #dev.off()
 
 
-#Calculates kud16 for crabs
+#Calculates kud for crabs
 #image(kud16)
 #class(kud16)
 #str(kud16)
@@ -99,7 +126,7 @@ colnames(mcp16frame) <- c("CrabNum","Island","95Cocos","95Natives","95Scaevola",
 colnames(kud16frame) <- c("CrabNum","Island","95Cocos","95Natives","95Scaevola","95Sand","50Cocos","50Natives","50Scaevola","50Sand","AvailCocos","AvailNatives","AvailScaevola","AvailSand")
 mcp16frame$CrabNum = unique(crabs2016$CrabNum)
 kud16frame$CrabNum = unique(crabs2016$CrabNum)
-
+View(head(crabs2016))
 #Calculates amount of available habitat in crab home range (95%/50% mcp16)
 for (crab in 1:nrow(mcp16frame)) {
   mcp16frame[crab,"Island"] = crabs2016[crabs2016$CrabNum==mcp16frame[crab,"CrabNum"],][1,"Island"]
@@ -150,12 +177,6 @@ for (crab in 1:nrow(kud16frame)) {
   kud16frame[crab,c("50Cocos","50Natives","50Scaevola","50Sand")] <- masked50tb
 }
 
-#Calculates widesIII selection ratios for each individual home range assessment
-widesIII(mcp16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")],mcp16frame[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
-widesIII(mcp16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")],mcp16frame[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
-widesIII(kud16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")],kud16frame[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
-widesIII(kud16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")],kud16frame[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
-
 #Creates new data frames to hold individual selection ratios
 mcp16wiframe = data.frame(matrix(nrow=length(unique(crabs2016$CrabNum)),ncol=8))
 kud16wiframe = data.frame(matrix(nrow=length(unique(crabs2016$CrabNum)),ncol=8))
@@ -166,6 +187,7 @@ colnames(kud16wiframe) <- paste0(c("95Cocos","95Natives","95Scaevola","95Sand","
 #Calculates individual selection ratios for each crab 
 for (crab in 1:nrow(mcp16wiframe)) {
   #ADEHabitat really doesn't like it when we have more than one zero in a column
+  if (FALSE) {
   if (mcp16frame[crab,"95Scaevola"]==0) {
     mcp16frame[crab,"95Scaevola"]=1
   }
@@ -189,6 +211,7 @@ for (crab in 1:nrow(mcp16wiframe)) {
   }
   if(kud16frame[crab,"50Sand"]==0) {
     kud16frame[crab,"50Sand"]=1
+  }
   }
   mcp1695ratios = widesIII(mcp16frame[crab,c("95Cocos","95Natives","95Scaevola","95Sand")],mcp16frame[crab,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
   kud1695ratios = widesIII(kud16frame[crab,c("95Cocos","95Natives","95Scaevola","95Sand")],kud16frame[crab,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
@@ -217,8 +240,6 @@ for (crab in 1:nrow(mcp16wiframe)) {
   kud16wiframe[crab,"50SandWI"] = kud1650ratios$wi[4]
 }
 
-
-
 range(mcp16wiframe$`95NativesWI`)
 range(mcp16wiframe$`50NativesWI`)
 range(kud16wiframe$`95NativesWI`)
@@ -234,10 +255,30 @@ mean(mcp16wiframe$`50CocosWI`)
 mean(kud16wiframe$`95CocosWI`)
 mean(kud16wiframe$`50CocosWI`)
 
-mcp16frame<- read.csv("mcp16-95-and-50-crabs-palmyra.csv")
-kud16frame<- read.csv("kud16-95-and-50-crabs-palmyra.csv")
+
+mcp16frame<- read.csv("propmcp16-95-and-50-crabs-palmyra.csv")
+kud16frame<- read.csv("propkud16-95-and-50-crabs-palmyra.csv")
 mcp16wiframe<- read.csv("mcp16WI-95-and-50-crabs-palmyra.csv")
 kud16wiframe<- read.csv("kud16WI-95-and-50-crabs-palmyra.csv")
+colnames(kud16frame) <- c("CrabNum","Island" ,"95Cocos", "95Natives"  ,   "95Scaevola" ,   "95Sand",       
+                          "50Cocos"   ,    "50Natives"  ,   "50Scaevola"   , "50Sand"   ,     "AvailCocos" ,   "AvailNatives" ,
+                          "AvailScaevola" ,"AvailSand")
+colnames(mcp16frame) <- c("CrabNum","Island" ,"95Cocos", "95Natives"  ,   "95Scaevola" ,   "95Sand",       
+                          "50Cocos"   ,    "50Natives"  ,   "50Scaevola"   , "50Sand"   ,     "AvailCocos" ,   "AvailNatives" ,
+                          "AvailScaevola" ,"AvailSand")
+
+#mcp16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")] = mcp16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")]/rowSums(mcp16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")])
+#mcp16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")] = mcp16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")]/rowSums(mcp16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")])
+#kud16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")] = kud16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")]/rowSums(kud16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")])
+#kud16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")] = kud16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")]/rowSums(kud16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")])
+
+#Calculates widesIII selection ratios for each individual home range assessment
+widesIII(mcp16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")],mcp16frame[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
+widesIII(mcp16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")],mcp16frame[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
+widesIII(kud16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")],kud16frame[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
+widesIII(kud16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")],kud16frame[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
+
+sum(mcp16frame$'95Cocos')
 
 #Constructs bar plots for coconut crabs 
 library(plyr)
@@ -272,9 +313,8 @@ p <- ggplot(data=dfall,aes(x=variable,y=value,fill=type)) + geom_bar(stat="ident
                 position=position_dodge(.9))
 p
 
-mcp16wiframe
 
-#write.csv(mcp16frame,"mcp16-95-and-50-crabs-palmyra.csv")
-#write.csv(kud16frame,"kud16-95-and-50-crabs-palmyra.csv")
+#write.csv(mcp16frame,"propmcp16-95-and-50-crabs-palmyra.csv")
+#write.csv(kud16frame,"propkud16-95-and-50-crabs-palmyra.csv")
 #write.csv(mcp16wiframe,"mcp16WI-95-and-50-crabs-palmyra.csv")
 #write.csv(kud16wiframe,"kud16WI-95-and-50-crabs-palmyra.csv")
