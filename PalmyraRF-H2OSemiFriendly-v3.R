@@ -10,6 +10,7 @@ install.packages("rgdal")        #more image manipulation functions
 #setwd("/volumes/Seagate 4tb/Palmyra Remote Sensing/antarctica-latest-free.shp");
 install.packages("caret")        #TBH don't remember what this does
 install.packages("e1071")        #TBH don't remember what this does
+install.packages("hrbrthemes")
 
 #Set this to whatever you like--I have it so D:/ always points to my portable hard drive with all the data on it
 setwd("/volumes/Seagate 4tb/Palmyra Remote Sensing")
@@ -21,7 +22,11 @@ library("e1071")
 library(maptools)
 library(dplyr)
 library(ggplot2)
+library(hrbrthemes)
 library(sf)
+library(adehabitatHS)
+library(plyr)
+library(reshape)
 ############################################
 ###### IMPORT IMAGE AND TRAINING DATA ######
 ############################################

@@ -152,10 +152,6 @@ for (crab in 1:nrow(kudframe)) {
   kudframe[crab,c("50Cocos","50Natives","50Scaevola","50Sand")] <- masked50tb
 }
 
-widesIII(mcpframe[,c("95Cocos","95Natives","95Scaevola","95Sand")],mcpframe[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
-widesIII(mcpframe[,c("50Cocos","50Natives","50Scaevola","50Sand")],mcpframe[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
-widesIII(kudframe[,c("95Cocos","95Natives","95Scaevola","95Sand")],kudframe[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
-widesIII(kudframe[,c("50Cocos","50Natives","50Scaevola","50Sand")],kudframe[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
 
 mcpwiframe = data.frame(matrix(nrow=length(unique(crabs2017$CrabNum)),ncol=8))
 kudwiframe = data.frame(matrix(nrow=length(unique(crabs2017$CrabNum)),ncol=8))
@@ -166,29 +162,31 @@ colnames(kudwiframe) <- paste0(c("95Cocos","95Natives","95Scaevola","95Sand","50
 
 for (crab in 1:nrow(mcpwiframe)) {
   #ADEHabitat really doesn't like it when we have more than one zero in a column
-  if (mcpframe[crab,"95Scaevola"]==0) {
-    mcpframe[crab,"95Scaevola"]=1
-  }
-  if(mcpframe[crab,"95Sand"]==0) {
-    mcpframe[crab,"95Sand"]=1
-  }
-  if (mcpframe[crab,"50Scaevola"]==0) {
-    mcpframe[crab,"50Scaevola"]=1
-  }
-  if(mcpframe[crab,"50Sand"]==0) {
-    mcpframe[crab,"50Sand"]=1
-  }
-  if (kudframe[crab,"95Scaevola"]==0) {
-    kudframe[crab,"95Scaevola"]=1
-  }
-  if(kudframe[crab,"95Sand"]==0) {
-    kudframe[crab,"95Sand"]=1
-  }
-  if (kudframe[crab,"50Scaevola"]==0) {
-    kudframe[crab,"50Scaevola"]=1
-  }
-  if(kudframe[crab,"50Sand"]==0) {
-    kudframe[crab,"50Sand"]=1
+  if (FALSE) {
+    if (mcpframe[crab,"95Scaevola"]==0) {
+      mcpframe[crab,"95Scaevola"]=1
+    }
+    if(mcpframe[crab,"95Sand"]==0) {
+      mcpframe[crab,"95Sand"]=1
+    }
+    if (mcpframe[crab,"50Scaevola"]==0) {
+      mcpframe[crab,"50Scaevola"]=1
+    }
+    if(mcpframe[crab,"50Sand"]==0) {
+      mcpframe[crab,"50Sand"]=1
+    }
+    if (kudframe[crab,"95Scaevola"]==0) {
+      kudframe[crab,"95Scaevola"]=1
+    }
+    if(kudframe[crab,"95Sand"]==0) {
+      kudframe[crab,"95Sand"]=1
+    }
+    if (kudframe[crab,"50Scaevola"]==0) {
+      kudframe[crab,"50Scaevola"]=1
+    }
+    if(kudframe[crab,"50Sand"]==0) {
+      kudframe[crab,"50Sand"]=1
+    }
   }
   mcp95ratios = widesIII(mcpframe[crab,c("95Cocos","95Natives","95Scaevola","95Sand")],mcpframe[crab,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
   kud95ratios = widesIII(kudframe[crab,c("95Cocos","95Natives","95Scaevola","95Sand")],kudframe[crab,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
@@ -234,17 +232,23 @@ mean(mcpwiframe$`50CocosWI`)
 mean(kudwiframe$`95CocosWI`)
 mean(kudwiframe$`50CocosWI`)
 
-mcpframe<- read.csv("MCP-95-and-50-crabs-palmyra.csv")
-kudframe<- read.csv("KUD-95-and-50-crabs-palmyra.csv")
-mcpwiframe<- read.csv("MCPWI-95-and-50-crabs-palmyra.csv")
-kudwiframe<- read.csv("KUDWI-95-and-50-crabs-palmyra.csv")
+mcpframe<- read.csv("MCP17-95-and-50-crabs-palmyra.csv")
+kudframe<- read.csv("KUD17-95-and-50-crabs-palmyra.csv")
+mcpwiframe<- read.csv("MCP17WI-95-and-50-crabs-palmyra.csv")
+kudwiframe<- read.csv("KUD17WI-95-and-50-crabs-palmyra.csv")
+colnames(kudframe) <- c("CrabNum","Island" ,"95Cocos", "95Natives"  ,   "95Scaevola" ,   "95Sand",       
+                          "50Cocos"   ,    "50Natives"  ,   "50Scaevola"   , "50Sand"   ,     "AvailCocos" ,   "AvailNatives" ,
+                          "AvailScaevola" ,"AvailSand")
+colnames(mcpframe) <- c("CrabNum","Island" ,"95Cocos", "95Natives"  ,   "95Scaevola" ,   "95Sand",       
+                          "50Cocos"   ,    "50Natives"  ,   "50Scaevola"   , "50Sand"   ,     "AvailCocos" ,   "AvailNatives" ,
+                          "AvailScaevola" ,"AvailSand")
 
 
 
-
-
-
-
+widesIII(mcpframe[,c("95Cocos","95Natives","95Scaevola","95Sand")],mcpframe[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
+widesIII(mcpframe[,c("50Cocos","50Natives","50Scaevola","50Sand")],mcpframe[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
+widesIII(kudframe[,c("95Cocos","95Natives","95Scaevola","95Sand")],kudframe[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
+widesIII(kudframe[,c("50Cocos","50Natives","50Scaevola","50Sand")],kudframe[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
 
 
 
@@ -281,9 +285,8 @@ p <- ggplot(data=dfall,aes(x=variable,y=value,fill=type)) + geom_bar(stat="ident
                 position=position_dodge(.9))
 p
 
-mcpwiframe
 
-#write.csv(mcpframe,"MCP-95-and-50-crabs-palmyra.csv")
-#write.csv(kudframe,"KUD-95-and-50-crabs-palmyra.csv")
-#write.csv(mcpwiframe,"MCPWI-95-and-50-crabs-palmyra.csv")
-#write.csv(kudwiframe,"KUDWI-95-and-50-crabs-palmyra.csv")
+#write.csv(mcpframe,"MCP17-95-and-50-crabs-palmyra.csv")
+#write.csv(kudframe,"KUD17-95-and-50-crabs-palmyra.csv")
+#write.csv(mcpwiframe,"MCP17WI-95-and-50-crabs-palmyra.csv")
+#write.csv(kudwiframe,"KUD17WI-95-and-50-crabs-palmyra.csv")

@@ -1,5 +1,5 @@
 library(geosphere) 
-library(adehabitatHS)
+
 
 # Import smoothed classification image:
 classed <- raster("6.26MASKEDPalmyra-RF-classification-v3-5x5-modal.tif") # Took 5x5 MODAL average
@@ -186,32 +186,33 @@ colnames(kud16wiframe) <- paste0(c("95Cocos","95Natives","95Scaevola","95Sand","
 
 #Calculates individual selection ratios for each crab 
 for (crab in 1:nrow(mcp16wiframe)) {
-  #ADEHabitat really doesn't like it when we have more than one zero in a column
+  #ADEHabitat really doesn't like it when we have more than one zero in a column. 
+  #Currently commented out since data is fortunately nonzero
   if (FALSE) {
-  if (mcp16frame[crab,"95Scaevola"]==0) {
-    mcp16frame[crab,"95Scaevola"]=1
-  }
-  if(mcp16frame[crab,"95Sand"]==0) {
-    mcp16frame[crab,"95Sand"]=1
-  }
-  if (mcp16frame[crab,"50Scaevola"]==0) {
-    mcp16frame[crab,"50Scaevola"]=1
-  }
-  if(mcp16frame[crab,"50Sand"]==0) {
-    mcp16frame[crab,"50Sand"]=1
-  }
-  if (kud16frame[crab,"95Scaevola"]==0) {
-    kud16frame[crab,"95Scaevola"]=1
-  }
-  if(kud16frame[crab,"95Sand"]==0) {
-    kud16frame[crab,"95Sand"]=1
-  }
-  if (kud16frame[crab,"50Scaevola"]==0) {
-    kud16frame[crab,"50Scaevola"]=1
-  }
-  if(kud16frame[crab,"50Sand"]==0) {
-    kud16frame[crab,"50Sand"]=1
-  }
+    if (mcp16frame[crab,"95Scaevola"]==0) {
+      mcp16frame[crab,"95Scaevola"]=1
+    }
+    if(mcp16frame[crab,"95Sand"]==0) {
+      mcp16frame[crab,"95Sand"]=1
+    }
+    if (mcp16frame[crab,"50Scaevola"]==0) {
+      mcp16frame[crab,"50Scaevola"]=1
+    }
+    if(mcp16frame[crab,"50Sand"]==0) {
+      mcp16frame[crab,"50Sand"]=1
+    }
+    if (kud16frame[crab,"95Scaevola"]==0) {
+      kud16frame[crab,"95Scaevola"]=1
+    }
+    if(kud16frame[crab,"95Sand"]==0) {
+      kud16frame[crab,"95Sand"]=1
+    }
+    if (kud16frame[crab,"50Scaevola"]==0) {
+      kud16frame[crab,"50Scaevola"]=1
+    }
+    if(kud16frame[crab,"50Sand"]==0) {
+      kud16frame[crab,"50Sand"]=1
+    }
   }
   mcp1695ratios = widesIII(mcp16frame[crab,c("95Cocos","95Natives","95Scaevola","95Sand")],mcp16frame[crab,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
   kud1695ratios = widesIII(kud16frame[crab,c("95Cocos","95Natives","95Scaevola","95Sand")],kud16frame[crab,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
@@ -260,12 +261,7 @@ mcp16frame<- read.csv("propmcp16-95-and-50-crabs-palmyra.csv")
 kud16frame<- read.csv("propkud16-95-and-50-crabs-palmyra.csv")
 mcp16wiframe<- read.csv("mcp16WI-95-and-50-crabs-palmyra.csv")
 kud16wiframe<- read.csv("kud16WI-95-and-50-crabs-palmyra.csv")
-colnames(kud16frame) <- c("CrabNum","Island" ,"95Cocos", "95Natives"  ,   "95Scaevola" ,   "95Sand",       
-                          "50Cocos"   ,    "50Natives"  ,   "50Scaevola"   , "50Sand"   ,     "AvailCocos" ,   "AvailNatives" ,
-                          "AvailScaevola" ,"AvailSand")
-colnames(mcp16frame) <- c("CrabNum","Island" ,"95Cocos", "95Natives"  ,   "95Scaevola" ,   "95Sand",       
-                          "50Cocos"   ,    "50Natives"  ,   "50Scaevola"   , "50Sand"   ,     "AvailCocos" ,   "AvailNatives" ,
-                          "AvailScaevola" ,"AvailSand")
+
 
 #mcp16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")] = mcp16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")]/rowSums(mcp16frame[,c("95Cocos","95Natives","95Scaevola","95Sand")])
 #mcp16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")] = mcp16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")]/rowSums(mcp16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")])
@@ -281,9 +277,7 @@ widesIII(kud16frame[,c("50Cocos","50Natives","50Scaevola","50Sand")],kud16frame[
 sum(mcp16frame$'95Cocos')
 
 #Constructs bar plots for coconut crabs 
-library(plyr)
-library(dplyr)
-library(reshape)
+
 data_summary <- function(data, varname, groupnames){
   require(plyr)
   summary_func <- function(x, col){
@@ -312,6 +306,8 @@ p <- ggplot(data=dfall,aes(x=variable,y=value,fill=type)) + geom_bar(stat="ident
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
                 position=position_dodge(.9))
 p
+
+
 
 
 #write.csv(mcp16frame,"propmcp16-95-and-50-crabs-palmyra.csv")
