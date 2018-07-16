@@ -9,7 +9,7 @@ classed <- raster("6.26MASKEDPalmyra-RF-classification-v3-5x5-modal.tif") # Took
 newWD = "../Palmyra Crab Research/Crab tagging/crab tracks 2017/trimmed crab tracks"
 crabList = list.files("../Palmyra Crab Research/Crab tagging/crab tracks 2017/trimmed crab tracks")
 importantValues = c("Date","Time","Latitude","Longitude","Altitude","Speed","Course","Distance","CrabNum","Island","m.s.before")
-
+crabList = crabList[which(crabList!="waterspeedtrimmed")]
 
 #Classifies crabs by island
 islands = c("sand","cooper","eastern","paradise")
@@ -18,6 +18,7 @@ otherCrabList = list.files("../Palmyra Crab Research/Crab tagging/crab tracks 20
 for (island in islands) {
   islandList[as.integer(substr(otherCrabList[grep(island,otherCrabList)],22,23))] = island
 }
+
 
 
 #Starts off crab tracking files
@@ -44,7 +45,7 @@ for (name in crabList) {
 crabs2017 = crabs2017[which(!is.na(crabs2017$Latitude)),]
 
 #Speed filter
-crabs2017 = crabs2017[-which(crabs2017$m.s.before > 0.15),]
+crabs2017 = crabs2017[which(crabs2017$m.s.before <= 0.15),]
 View(head(crabs2017))
 
 #Converts classified habitate data into coordinate points in data frame form
@@ -159,9 +160,11 @@ for (crab in 1:nrow(crabitatDF)) {
 #crabLocation
 #crabLocation[1,"Cocos"]/sum(crabLocation)
 #crabLocation[1,"Natives"]/sum(crabLocation)
+crabitatDF[,c("TotalCocos","TotalNatives","TotalScaevola","TotalSand")] = crabitatDF[,c("TotalCocos","TotalNatives","TotalScaevola","TotalSand")]/rowSums(crabitatDF[,c("TotalCocos","TotalNatives","TotalScaevola","TotalSand")])
 
 #Calculates habitat selection 
 widesIII(crabitatDF[,c("TotalCocos","TotalNatives","TotalScaevola","TotalSand")],crabitatDF[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
+
 crabitatDF$CocosWI= 0
 crabitatDF$NativesWI= 0
 crabitatDF$ScaevolaWI= 0
