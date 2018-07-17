@@ -27,6 +27,7 @@ library(sf)
 library(adehabitatHS)
 library(plyr)
 library(reshape)
+library(pracma)
 ############################################
 ###### IMPORT IMAGE AND TRAINING DATA ######
 ############################################

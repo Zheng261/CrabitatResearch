@@ -76,7 +76,6 @@ crabs2017$CrabNum = crabs2017$CrabNum + 100
 TempDate = format(as.POSIXct(paste(crabs2017$Date,crabs2017$Time),format="%m/%d/%Y %H:%M:%S"),format="%m/%d/%y")
 TempDateOthers = format(as.POSIXct(paste(crabs2017$Date,crabs2017$Time),format="%Y/%m/%d %H:%M:%S"),format="%m/%d/%y")
 TempDate[is.na(TempDate)] = TempDateOthers[!is.na(TempDateOthers)]
-
 crabs2017$Date = TempDate
 unique(crabs2017$Date)
 crabs201X = rbind(crabs2016,crabs2017)
@@ -116,7 +115,7 @@ for (entry in 2:nrow(crabs201X)) {
    }
 }
 
-
+#Begins abacus plots to analyze gap frequency of crab tracking
 abacus<-function(state_rec, times,states=NULL,labels=NULL,add=FALSE,xlim=NULL,tunit="month", format="%m/%y",col="black",
                  ylab="Station",xlab="date",yline=4,xline=3,xcex=1.5,ycex=1.5,cex.yaxis=.75,cex.xaxis=.75,pch=15,main="Crab"){
   length.out<-length(state_rec)
@@ -154,6 +153,7 @@ abacus<-function(state_rec, times,states=NULL,labels=NULL,add=FALSE,xlim=NULL,tu
 #abacus(state_rec=States,times=StateTime,states=c("State1","State2","State3","State4","State5"),col=as.factor(ind))
 #abacus(state_rec=ind,times=StateTime,col=as.factor(States))
 
+# Plotting over each day 
 length(crabs201X[,1])
 unique(crabs201X$Date)
 #pdf("GapAnalysis.pdf")
@@ -164,6 +164,8 @@ for (day in unique(crabs201X$Date)) {
   abacus(state_rec=thisCrabDay$CrabNum,times=thisDateVec,states=unique(thisCrabDay$CrabNum),format="%m/%d - %H",tunit="hour",xcex=1,xlab="Date",ylab="Crab",col=revalue(thisCrabDay$Island,c("cooper"="red","sand"="yellow","paradise"="green","eastern"="blue")),main=day)
 }
 #dev.off()
+
+#Plotting over each crab
 #pdf("SingleCrabGapAnalysis.pdf")
 for (crab in unique(crabs201X$CrabNum)) {
   thisCrabTrax = subset(crabs201X,CrabNum==crab)
@@ -196,7 +198,8 @@ for (crab in unique(crabs201X$CrabNum)) {
 #dev.off()
 
 
-# Begins compiling 2017 and 2016 crab data
+# Begins compiling 2017 and 2016 finished crab analyses (could easily redo, it just takes a hella long time)
+
 mcpframe <- read.csv("MCP17-95-and-50-crabs-palmyra.csv")
 kudframe <- read.csv("KUD17-95-and-50-crabs-palmyra.csv")
 mcp16frame <- read.csv("propmcp16-95-and-50-crabs-palmyra.csv")
@@ -250,6 +253,7 @@ for (crab in 1:nrow(mcpallwiframe)) {
 }
 kudallwiframe
 
+#Prints out all info about selection ratios when taking individual crabs into account
 mean(kudallwiframe$`95CocosWI`)
 mean(kudallwiframe$`50CocosWI`)
 mean(kudallwiframe$`95NativesWI`)

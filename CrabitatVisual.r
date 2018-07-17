@@ -6,12 +6,6 @@ names(imgtest)
 #projected <- projectRaster(imgtest,crs="+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
 
 plotRGB(imgtest, r=1, g=2, b=3,stretch="lin")
-
-#names(classed) <- "classification"
-#rat <- levels(classed)[[1]]
-#rat[["landcover"]] <- c("Cocos","Native", "Scaevola","Sand/Other")
-#levels(classed) <- rat
-#plot(as.factor(classed),alpha=0.7)
 plot(classed,add=TRUE,alpha=0.5)
 
 shapefiledir = "../Palmyra Crab Research/Crab tagging/crab tracks 2017/speed-filtered shapefiles/crab-01-speedtrimmed.shp"

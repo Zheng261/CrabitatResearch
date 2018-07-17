@@ -69,7 +69,7 @@ colnames(allLocations) = c("Cocos","Natives","Scaevola","Sand")
 rownames(allLocations) = islands
 
 #Loops through all islands, imports their QGIS-cropped images, and calculates their habitat ratios
-islandList <- list()
+islandCoordsList <- list()
 for (isle in islands) {
   classedIsle = raster(paste0(isle,".tif"))
   #Converts classified habitat spatial image into global coordinates
@@ -80,7 +80,7 @@ for (isle in islands) {
                                   lat=coordinates(islecoordpts)[,2])
   #Removes all duplicates from classified satellite imagery
   islecoordpts@data = islecoordpts@data[!duplicated(islecoordpts@data[,1:3]),]
-  islandList[[isle]] <- islecoordpts@data
+  islandCoordsList[[isle]] <- islecoordpts@data
   colnames(islecoordpts@data) <- c("class","long","lat")
   #View(islecoordpts@data)
   totalavailhab = table(islecoordpts@data[,"class"])
@@ -128,7 +128,7 @@ for (crab in 1:nrow(crabitatDF)) {
   crabitatDF[crab,"AvailNatives"] = allLocations[crabitatDF[crab,"Island"],"Natives"]
   crabitatDF[crab,"AvailScaevola"] = allLocations[crabitatDF[crab,"Island"],"Scaevola"]
   crabitatDF[crab,"AvailSand"] = allLocations[crabitatDF[crab,"Island"],"Sand"]
-  thisCrabIsland = islandList[[crabitatDF[crab,"Island"]]]
+  thisCrabIsland = islandCoordsList[[crabitatDF[crab,"Island"]]]
   thisCrabTracks$isInWater = FALSE;
   for (i in 1:nrow(thisCrabTracks)) {
     #temp = thisCrabIsland[(thisCrabIsland[,"long"]==thisCrabTracks$Longitude[i]&thisCrabIsland[,"lat"]==thisCrabTracks$Latitude[i]),]
@@ -156,10 +156,7 @@ for (crab in 1:nrow(crabitatDF)) {
   #write.csv(thisCrabTracks,paste0(newWD,"/waterspeedtrimmed/crab-",crabitatDF[crab,"CrabNum"],"waterspeed-trimmed.csv"))
 }
 
-#Calculates approximate % time spent in each of these habitats in crabs
-#crabLocation
-#crabLocation[1,"Cocos"]/sum(crabLocation)
-#crabLocation[1,"Natives"]/sum(crabLocation)
+
 crabitatDF[,c("TotalCocos","TotalNatives","TotalScaevola","TotalSand")] = crabitatDF[,c("TotalCocos","TotalNatives","TotalScaevola","TotalSand")]/rowSums(crabitatDF[,c("TotalCocos","TotalNatives","TotalScaevola","TotalSand")])
 
 #Calculates habitat selection 
