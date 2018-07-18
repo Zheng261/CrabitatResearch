@@ -28,6 +28,7 @@ library(adehabitatHS)
 library(plyr)
 library(reshape)
 library(pracma)
+library("Hmisc")
 ############################################
 ###### IMPORT IMAGE AND TRAINING DATA ######
 ############################################

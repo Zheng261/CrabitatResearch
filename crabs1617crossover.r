@@ -285,7 +285,6 @@ data_summary <- function(data, varname, groupnames){
 }
 
 #pdf("Crabs201617CompiledAnalysis.pdf")
-
 meltmcpallwiframe <- melt(mcpallwiframe,id=c("CrabNum","Island","Year"))
 meltmcpallwiframe$type = revalue(substr(meltmcpallwiframe$variable,1,2),c("95" = "mcp95","50" = "mcp50"))
 meltmcpallwiframe$variable = substr(meltmcpallwiframe$variable,3,100)

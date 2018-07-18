@@ -160,7 +160,7 @@ for (crab in 1:nrow(crabitat16DF)) {
 #crabLocation[1,"Natives"]/sum(crabLocation)
 
 #Calculates habitat selection 
-widesIII(crabitat16DF[,c("TotalCocos","TotalNatives","TotalScaevola","TotalSand")],crabitat16DF[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")])
+widesIII(crabitat16DF[,c("AvailCocos","AvailNatives","AvailScaevola","AvailSand")],crabitat16DF[,c("TotalCocos","TotalNatives","TotalScaevola","TotalSand")])
 crabitat16DF$CocosWI= 0
 crabitat16DF$NativesWI= 0
 crabitat16DF$ScaevolaWI= 0
