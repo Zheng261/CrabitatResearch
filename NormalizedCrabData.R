@@ -1,7 +1,9 @@
 crabs201X <- read.csv("crabs201XAll.csv")
 
-
+#############################
 ##### NORMALIZED POINTS #####
+#############################
+
 HourlyTrackDF = data.frame(matrix(nrow=0,ncol=9))
 colnames(HourlyTrackDF) <- c("DateTime","CrabNum","NumEntries","Cocos","Natives","Scaevola","Sand","Island","Year")
 
@@ -159,7 +161,10 @@ p
 
 dev.off()
 
+############################
 ##### MEDIAN APPROACH ######
+############################
+
 HourlyMedianDF = data.frame(matrix(nrow=0,ncol=6))
 colnames(HourlyMedianDF) <-  c("DateTime","Latitude","Longitude","CrabNum","Island","Year")
 
@@ -357,6 +362,13 @@ for (crab in 1:nrow(kudmedframe)) {
 }
 #write.csv(mcpmedframe,"7.17normMCPFrame.csv")
 #write.csv(kudmedframe,"7.17normKUDFrame.csv")
+#write.csv(HourlyMedianDF,"7.17hourlymediandf.csv")
+mcpmedframe <- read.csv("7.17normMCPFrame.csv")
+kudmedframe <- read.csv("7.17normKUDFrame.csv")
+mcpmedframe = mcpmedframe[,-1]
+kudmedframe = kudmedframe[,-1]
+colnames(mcpmedframe) <- c("CrabNum","Island","95Cocos","95Natives","95Scaevola","95Sand","50Cocos","50Natives","50Scaevola","50Sand","AvailCocos","AvailNatives","AvailScaevola","AvailSand")
+colnames(kudmedframe) <- c("CrabNum","Island","95Cocos","95Natives","95Scaevola","95Sand","50Cocos","50Natives","50Scaevola","50Sand","AvailCocos","AvailNatives","AvailScaevola","AvailSand")
 
 #Adds 0.0001 so widesIII isn't too angry at us
 mcpmedframe[,c("95Cocos","95Natives","95Scaevola","95Sand")] = mcpmedframe[,c("95Cocos","95Natives","95Scaevola","95Sand")]/rowSums(mcpmedframe[,c("95Cocos","95Natives","95Scaevola","95Sand")]) + 0.0001
@@ -428,7 +440,53 @@ mcpmedwiframe$Year = HourlyMedianDF[which(!duplicated(HourlyMedianDF$CrabNum)),]
 kudmedwiframe$CrabNum = HourlyMedianDF[which(!duplicated(HourlyMedianDF$CrabNum)),]$CrabNum
 kudmedwiframe$Island = HourlyMedianDF[which(!duplicated(HourlyMedianDF$CrabNum)),]$Island
 kudmedwiframe$Year = HourlyMedianDF[which(!duplicated(HourlyMedianDF$CrabNum)),]$Year
+
+
+#########################################
+#### Home range sufficiency analysis ####
+#########################################
+
+
+
+#Tracks for 12 days, 6 hour intervals
+kernal50Area = data.frame(matrix(nrow=nrow(kudmedframe),ncol=48))
+kernal50Area[,] = 0 
+colnames(kernal50Area) = seq(6,6*48,6)
+kernal50Area$CrabNum = kudmedframe$CrabNum
+kernal50Area$Island = kudmedframe$Island
+kernal95Area = kernal50Area
+
+for (crab in kudmedframe$CrabNum) {
+  thisCrabTrax = HourlyMedianDF[which(HourlyMedianDF$CrabNum == crab),]
+  thisDateVec = as.POSIXct(thisCrabTrax$DateTime,format="%Y-%m-%d %H:%M:%S")
+  origTime = thisDateVec[1]
+  elapsedTime = thisDateVec[length(thisDateVec)] - origTime
+  numHoursElapsed = floor(as.numeric(elapsedTime,units="hours"))
+  numColsUsed = ceil(numHoursElapsed/6)
   
+  #Finds lower and upper bound of elapsed time, gets all tracks within range
+  for (hours in 1:numColsUsed) {
+    UBHours = (hours)*6
+    diff = as.numeric(thisDateVec - origTime,units="hours")
+    relevantTrax = thisCrabTrax[diff <= UBHours,]
+    #Makes sure there are enough crab entries to form a data frame - if not, then just put it as zero
+    if (nrow(relevantTrax)>5) {
+      thisCrabTrax.sp = SpatialPoints(coords = thisCrabTrax[,c("Longitude","Latitude")], proj4string = CRS('+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0')) # convert to SpatialPoints object
+      thisCrabTrax.spt <- spTransform(thisCrabTrax.sp,CRS("+proj=utm +zone=3 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"))
+      resolution = 1
+      x <- seq(extent(thisCrabTrax.spt)[1]-300, extent(thisCrabTrax.spt)[2]+300,by=resolution) # where resolution is the pixel size you desire 
+      y <- seq(extent(thisCrabTrax.spt)[3]-300, extent(thisCrabTrax.spt)[4]+300,by=resolution)
+      xy <- expand.grid(x=x,y=y)
+      coordinates(xy) <- ~x+y
+      gridded(xy) <- TRUE
+      #Constructs kernel utilization density of crab tracks
+      kud <- kernelUD(thisCrabTrax.spt, grid=xy, h="href") # NOTE: look into changing grid value. Currently I think it's too big because the estimated homerange (plotted below) looks too big. Either grid or h needs tweaking.
+      kernal50Area[which(kernal50Area$CrabNum == crab),hours] = kernel.area(kud)["50"]
+      kernal95Area[which(kernal95Area$CrabNum == crab),hours] = kernel.area(kud)["95"]
+    }
+  }
+}
+
 
 # Begin visualizing 2016-2017 crabs data (normalized with median)
 data_summary <- function(data, varname, groupnames){
@@ -443,12 +501,25 @@ data_summary <- function(data, varname, groupnames){
   return(data_sum)
 }
 
+data_summarymed <- function(data, varname, groupnames){
+  require(plyr)
+  summary_func <- function(x, col){
+    c(median = median(x[[col]], na.rm=TRUE),
+      sd = sd(x[[col]], na.rm=TRUE))
+  }
+  data_sum<-ddply(data, groupnames, .fun=summary_func,
+                  varname)
+  data_sum <- rename(data_sum, c("median" = varname))
+  return(data_sum)
+}
+
 mcpmedframe = subset(mcpmedframe,Island!="paradise")
 kudmedframe = subset(kudmedframe,Island!="paradise")
 mcpmedwiframe = subset(mcpmedwiframe,Island!="paradise")
 kudmedwiframe = subset(kudmedwiframe,Island!="paradise")
 
-pdf("7.16Crabs201617NormCompiledAnalysis.pdf")
+
+#pdf("7.18Crabs201617NormCompiledAnalysis.pdf")
 meltmcpallwiframe <- melt(mcpmedwiframe,id=c("CrabNum","Island","Year"))
 meltmcpallwiframe$type = revalue(substr(meltmcpallwiframe$variable,1,2),c("95" = "mcp95","50" = "mcp50"))
 meltmcpallwiframe$variable = substr(meltmcpallwiframe$variable,3,100)
@@ -462,36 +533,42 @@ dfall = rbind(dfmcpall,dfkudall)
 meltall = rbind(meltmcpallwiframe,meltkudallwiframe)
 
 p <- ggplot(data=meltall,aes(x=variable,y=value,fill=type)) + geom_violin(position=position_dodge()) + 
-  stat_summary(fun.y="mean",geom="point",position=position_dodge(0.9)) + ggtitle("Average Habitat Selection Ratio for Coconut Crabs 16-17")  
-p 
+  stat_summary(fun.data=mean_sdl,geom="pointrange",position=position_dodge(0.9)) + ggtitle("Average Habitat Selection Ratio for Coconut Crabs 16-17") + coord_cartesian(ylim = c(0, 5)) + ylab("Selection Ratio") + xlab("Habitat Type")
+p
 
-#All crbas ever, plotting in general
+#All crabs ever, plotting in general
+#Mean
 p <- ggplot(data=dfall,aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
-                position=position_dodge(.9)) + ggtitle("Average Habitat Selection Ratio for Coconut Crabs 16-17")
+                position=position_dodge(.9)) + ggtitle("Average Habitat Selection Ratio for Coconut Crabs 16-17") + coord_cartesian(ylim = c(0, 3)) + ylab("Selection Ratio") + xlab("Habitat Type")
+p
+
+#Median
+dfmcpallmedian <- data_summarymed(meltmcpallwiframe,varname="value",groupnames=c("type","variable"))
+dfkudallmedian <- data_summarymed(meltkudallwiframe,varname="value",groupnames=c("type","variable"))
+dfallmedian = rbind(dfmcpallmedian,dfkudallmedian)
+p <- ggplot(data=dfallmedian,aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+  #geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2, position=position_dodge(.9)) + 
+  ggtitle("Median Habitat Selection Ratio for Coconut Crabs 16-17") + coord_cartesian(ylim = c(0, 1.5)) + ylab("Selection Ratio") + xlab("Habitat Type")
 p
 
 #All crabs ever, plotting by year
-meltmcpallwiframe$varYear = paste(meltmcpallwiframe$variable,meltmcpallwiframe$Year)
-meltkudallwiframe$varYear = paste(meltkudallwiframe$variable,meltkudallwiframe$Year)
-dfmcpallvy <- data_summary(meltmcpallwiframe,varname="value",groupnames=c("type","varYear"))
-dfkudallvy <- data_summary(meltkudallwiframe,varname="value",groupnames=c("type","varYear"))
+dfmcpallvy <- data_summary(meltmcpallwiframe,varname="value",groupnames=c("type","variable","Year"))
+dfkudallvy <- data_summary(meltkudallwiframe,varname="value",groupnames=c("type","variable","Year"))
 dfallvy = rbind(dfmcpallvy,dfkudallvy)
-p <- ggplot(data=dfallvy,aes(x=varYear,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+p <- ggplot(data=dfallvy,aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
-                position=position_dodge(.9)) +  ggtitle("Average Habitat Selection Ratio for Coconut Crabs By Year")
+                position=position_dodge(.9)) +  ggtitle("Average Habitat Selection Ratio for Coconut Crabs By Year") + coord_cartesian(ylim = c(0, 3))+ ylab("Selection Ratio") + xlab("Habitat Type") + facet_wrap(~Year)
 p
 
 #All crabs ever, plotting by island 
-meltmcpallwiframe$varIsle = paste(meltmcpallwiframe$variable,meltmcpallwiframe$Island)
-meltkudallwiframe$varIsle = paste(meltkudallwiframe$variable,meltkudallwiframe$Island)
-dfmcpallvi <- data_summary(meltmcpallwiframe,varname="value",groupnames=c("type","varIsle"))
-dfkudallvi <- data_summary(meltkudallwiframe,varname="value",groupnames=c("type","varIsle"))
+dfmcpallvi <- data_summary(meltmcpallwiframe,varname="value",groupnames=c("type","variable","Island"))
+dfkudallvi <- data_summary(meltkudallwiframe,varname="value",groupnames=c("type","variable","Island"))
 dfallvi = rbind(dfmcpallvi,dfkudallvi)
-p <- ggplot(data=dfallvi,aes(x=varIsle,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+p <- ggplot(data=dfallvi,aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
                 position=position_dodge(.9)) + theme(text = element_text(size=10),
-                                                     axis.text.x = element_text(angle=60, hjust=1)) +  ggtitle("Average Habitat Selection Ratio for Coconut Crabs By Island")
+                                                     axis.text.x = element_text(angle=60, hjust=1)) +  ggtitle("Average Habitat Selection Ratio for Coconut Crabs By Island") + coord_cartesian(ylim = c(0, 4)) + facet_wrap(~Island) + ylab("Selection Ratio") + xlab("Habitat Type")
 p
 
 #Analysis of crab selection by island
@@ -516,10 +593,10 @@ relativeall$varIsle = paste(relativeall$variable,relativeall$Island)
 relativeall$sd[is.na(relativeall$sd)] = 0
 relativeall$value = as.numeric(relativeall$value)
 relativeall$sd = as.numeric(relativeall$sd)
-p <- ggplot(data=relativeall,aes(x=varIsle,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+p <- ggplot(data=relativeall,aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
                 position=position_dodge(.9)) + theme(text = element_text(size=10),
-                                                    axis.text.x = element_text(angle=60, hjust=1)) + ggtitle("% Crab Home Range in Each Habitat Type by Island, Compared to Real Habitat Ratio")
+                                                    axis.text.x = element_text(angle=60, hjust=1)) + ggtitle("% Crab Home Range in Each Habitat Type by Island, Compared to Real Habitat Ratio") + facet_wrap(~Island) + coord_cartesian(ylim = c(0, 1)) + ylab("% Home Range in Habitat") + xlab("Habitat Type")
 #+ theme_minimal()
 p
 
@@ -532,11 +609,77 @@ for (isle in 1:nrow(allLocations)) {
   meltcraball[nrow(meltcraball)+1,] = c(rownames(allLocations)[isle],"Sand",allLocations[isle,"Sand"],"actual")
   }
 }
-meltcraball$varIsle = paste(meltcraball$variable,meltcraball$Island)
-meltcraball = subset(meltcraball,type=="kud95" | type == "actual")
 meltcraball$value = as.numeric(meltcraball$value)
-p <- ggplot(data=meltcraball,aes(x=variable,y=value,fill=type)) + geom_violin(position=position_dodge(),fill="green") +
-  stat_summary(fun.y="mean",geom="point",aes(color=type)) + ggtitle("% Crab Home Range in Each Habitat Type By Island, Compared to Real Habitat Ratio") + facet_wrap(~Island)
+meltcraball$varIsle = paste(meltcraball$variable,meltcraball$Island)
+
+
+meltcrabactual <- subset(meltcraball,type=="actual")
+p <- ggplot(data=meltcrabactual,aes(x=variable,y=value,fill=variable)) + geom_bar(stat="identity",position=position_dodge()) +
+ ggtitle("% Habitat Availability by Island, Compared to Real Habitat Ratio") + facet_wrap(~Island) + ylab("% Available Habitat") + xlab("Habitat Type") + coord_cartesian(ylim = c(0, 1))
 p
-#dev.off()
+
+
+
+
+### KUD ONLY
+
+p <- ggplot(data=subset(meltall,type=="kud95"),aes(x=variable,y=value)) + geom_violin(position=position_dodge()) + 
+  stat_summary(fun.data=mean_sdl,geom="pointrange",position=position_dodge(0.9)) + ggtitle("Average Habitat Selection Ratio for Coconut Crabs 16-17, KUD95") + coord_cartesian(ylim = c(0, 5)) 
+p
+
+p <- ggplot(data=subset(dfallvi,type=="kud95"),aes(x=variable,y=value,fill=variable)) + geom_bar(stat="identity",position=position_dodge()) +
+  geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
+                position=position_dodge(.9)) + theme(text = element_text(size=10),
+                                                     axis.text.x = element_text(angle=60, hjust=1)) +  ggtitle("Average Habitat Selection Ratio for Coconut Crabs By Island, KUD95") + coord_cartesian(ylim = c(0, 4)) + facet_wrap(~Island) + ylab("Selection Ratio") + xlab("Habitat Type")
+p
+
+meltcrabkud = subset(meltcraball,type=="kud95")
+p <- ggplot(data=meltcrabkud,aes(x=variable,y=value,fill=variable)) + geom_violin(position=position_dodge()) +
+  stat_summary(fun.data="mean_sdl",geom="pointrange") + ggtitle("% Crab Home Range in Each Habitat Type By Island") + facet_wrap(~Island) + coord_cartesian(ylim = c(0, 1)) + ylab("% Home Range in Habitat") + xlab("Habitat Type") 
+p
+
+
 dev.off()
+
+
+
+
+
+##### Abacus plot of hits ######
+pdf("7.17HourMedianCrabHitsPerHour.pdf")
+abacus<-function(state_rec, times,states=NULL,labels=NULL,add=FALSE,xlim=NULL,tunit="month", format="%m/%y",col="black",
+                 ylab="Station",xlab="date",yline=4,xline=3,xcex=1.5,ycex=1.5,cex.yaxis=.75,cex.xaxis=.75,pch=15,main="Crab"){
+  length.out<-length(state_rec)
+  if(is.null(states)){
+    states<-unique(state_rec)
+  }
+  nstates<-length(states)
+  order<-rep(1,length.out)
+  for(i in 2:nstates){
+    order[which(state_rec==states[i])]<-i
+  }
+  if(add==FALSE){
+    if(is.null(xlim)){
+      xlim<-c(min(times,na.rm=TRUE),max(times,na.rm=TRUE))
+    } 
+    if(is.null(labels)){
+      labels<-states
+    }
+    ylim<-c(.5,(nstates+.5))
+    
+    plot(main=main,0,type="n",ylim=ylim,xlim=xlim,yaxt="n",xaxt="n",xlab=" ",ylab=" ")
+    axis(2,at=seq(1:nstates),labels=labels,las=2,cex.axis=cex.yaxis)
+    axis.POSIXct(1, at=seq(xlim[1], xlim[2], by=tunit)
+                 ,format=format,las=2,cex.axis=cex.xaxis)
+    mtext(text = xlab,side = 1,line = xline, cex = xcex)
+    mtext(text = ylab,side = 2,line = yline, cex = ycex)
+  }
+  points(order ~ times,pch=pch,col=col)
+}
+for (crab in unique(HourlyMedianDF$CrabNum)) {
+  thisCrabTrax = subset(HourlyMedianDF,CrabNum==crab) 
+  thisDateVec = as.POSIXct(thisCrabTrax$DateTime,format="%Y-%m-%d %H:%M:%S")
+  abacus(state_rec=thisCrabTrax$CrabNum,times=thisDateVec,states=unique(thisCrabTrax$CrabNum),format="%m/%d, %H:%M",tunit="21600 s",xcex=1,xlab="Crab",ylab="Entries",col=revalue(thisCrabTrax$Island,c("cooper"="red","sand"="yellow","paradise"="green","eastern"="blue")),main=paste("Crab No.",crab))
+}
+dev.off()
+
