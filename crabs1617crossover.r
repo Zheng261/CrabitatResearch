@@ -174,7 +174,6 @@ for (crab in unique(crabs201X$CrabNum)) {
 }
 #dev.off()
 
-
 #Plotting how many crab hits per half an hour 
 #crabNumVec = crabs201X$CrabNum
 #thisDateVec = as.POSIXct(paste(crabs201X$Date, crabs201X$Time),format="%m/%d/%y %H:%M:%S")

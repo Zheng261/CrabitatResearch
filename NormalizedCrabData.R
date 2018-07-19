@@ -137,12 +137,12 @@ dfHourlyNorm <- data_summary(meltHourlyTrackDataDF,varname="value",groupnames=c(
 
 
 
-pdf("7.16NormalizedCrabTracksv2.pdf")
+#pdf("7.16NormalizedCrabTracksv2.pdf")
 #All crabs ever, plotting selection ratios of habitats by island
 p <- ggplot(data=dfHourlyNorm,aes(x=Island,y=value,fill=variable)) + geom_bar(stat="identity",position=position_dodge()) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
                 position=position_dodge(.9)) + ggtitle("Average Habitat Selection Ratio for Coconut Crabs 16-17, \nNormalized Entries, Tracks Only")
-print(p)
+#print(p)
 
 #Analysis of crab selection by island, comparing actual track% presence vs. available presence
 meltNormFrameAll = melt(HourlyTrackDataDF[,-c(1,3,12:15)],id=c("Island"))
@@ -202,7 +202,7 @@ for (crab in unique(crabs201X$CrabNum)) {
   HourlyMedianDF = rbind(HourlyMedianDF,entryDF)
 }
 HourlyMedianDF = HourlyMedianDF[which(HourlyMedianDF$Latitude != 0),]
-
+HourlyMedianDF = subset(HourlyMedianDF,CrabNum!=133)
 
 #Plots individual median-obtained crab tracks per island, by day
 #pdf("7.16TimeMedianCrabVisualTracks.pdf")
@@ -287,7 +287,6 @@ for (crab in unique(HourlyMedianDF$CrabNum)) {
          col=c(rainbow(4)[1], rainbow(4)[2]), lty=1, cex=1)
 }
 #dev.off()
-HourlyMedianDF = subset(HourlyMedianDF,CrabNum!=133)
 #saveRDS(crabHRList, file = "crabHRdata.rds")
 
 
@@ -360,9 +359,17 @@ for (crab in 1:nrow(kudmedframe)) {
   masked50tb = masked50tb[c("0","1","2","5")]
   kudmedframe[crab,c("50Cocos","50Natives","50Scaevola","50Sand")] <- masked50tb
 }
+
+
+
 #write.csv(mcpmedframe,"7.17normMCPFrame.csv")
 #write.csv(kudmedframe,"7.17normKUDFrame.csv")
 #write.csv(HourlyMedianDF,"7.17hourlymediandf.csv")
+
+#### READS IN FILES - START HERE FOR DATA ANALYSIS #####
+HourlyMedianDF = read.csv("7.17hourlymediandf.csv")
+HourlyMedianDF = HourlyMedianDF[,which(colnames(HourlyMedianDF)!='X')]
+HourlyMedianDF = subset(HourlyMedianDF,CrabNum!=133)
 mcpmedframe <- read.csv("7.17normMCPFrame.csv")
 kudmedframe <- read.csv("7.17normKUDFrame.csv")
 mcpmedframe = mcpmedframe[,-1]
@@ -446,17 +453,16 @@ kudmedwiframe$Year = HourlyMedianDF[which(!duplicated(HourlyMedianDF$CrabNum)),]
 #### Home range sufficiency analysis ####
 #########################################
 
-
-
 #Tracks for 12 days, 6 hour intervals
-kernal50Area = data.frame(matrix(nrow=nrow(kudmedframe),ncol=48))
-kernal50Area[,] = 0 
-colnames(kernal50Area) = seq(6,6*48,6)
-kernal50Area$CrabNum = kudmedframe$CrabNum
-kernal50Area$Island = kudmedframe$Island
-kernal95Area = kernal50Area
+kernel50Area = data.frame(matrix(nrow=nrow(kudmedframe),ncol=48))
+kernel50Area[,] = 0 
+colnames(kernel50Area) = seq(6,6*48,6)
+kernel50Area$CrabNum = kudmedframe$CrabNum
+kernel50Area$Island = kudmedframe$Island
+kernel95Area = kernel50Area
 
 for (crab in kudmedframe$CrabNum) {
+  print(crab)
   thisCrabTrax = HourlyMedianDF[which(HourlyMedianDF$CrabNum == crab),]
   thisDateVec = as.POSIXct(thisCrabTrax$DateTime,format="%Y-%m-%d %H:%M:%S")
   origTime = thisDateVec[1]
@@ -471,7 +477,7 @@ for (crab in kudmedframe$CrabNum) {
     relevantTrax = thisCrabTrax[diff <= UBHours,]
     #Makes sure there are enough crab entries to form a data frame - if not, then just put it as zero
     if (nrow(relevantTrax)>5) {
-      thisCrabTrax.sp = SpatialPoints(coords = thisCrabTrax[,c("Longitude","Latitude")], proj4string = CRS('+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0')) # convert to SpatialPoints object
+      thisCrabTrax.sp = SpatialPoints(coords = relevantTrax[,c("Longitude","Latitude")], proj4string = CRS('+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0')) # convert to SpatialPoints object
       thisCrabTrax.spt <- spTransform(thisCrabTrax.sp,CRS("+proj=utm +zone=3 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"))
       resolution = 1
       x <- seq(extent(thisCrabTrax.spt)[1]-300, extent(thisCrabTrax.spt)[2]+300,by=resolution) # where resolution is the pixel size you desire 
@@ -481,14 +487,21 @@ for (crab in kudmedframe$CrabNum) {
       gridded(xy) <- TRUE
       #Constructs kernel utilization density of crab tracks
       kud <- kernelUD(thisCrabTrax.spt, grid=xy, h="href") # NOTE: look into changing grid value. Currently I think it's too big because the estimated homerange (plotted below) looks too big. Either grid or h needs tweaking.
-      kernal50Area[which(kernal50Area$CrabNum == crab),hours] = kernel.area(kud)["50"]
-      kernal95Area[which(kernal95Area$CrabNum == crab),hours] = kernel.area(kud)["95"]
+      kernel50Area[which(kernel50Area$CrabNum == crab),hours] = kernel.area(kud)["50"]
+      kernel95Area[which(kernel95Area$CrabNum == crab),hours] = kernel.area(kud)["95"]
     }
   }
 }
 
 
-# Begin visualizing 2016-2017 crabs data (normalized with median)
+
+
+
+
+####################################################################
+### Begin visualizing 2016-2017 crabs data (normalized with median) ###
+####################################################################
+
 data_summary <- function(data, varname, groupnames){
   require(plyr)
   summary_func <- function(x, col){
@@ -518,8 +531,7 @@ kudmedframe = subset(kudmedframe,Island!="paradise")
 mcpmedwiframe = subset(mcpmedwiframe,Island!="paradise")
 kudmedwiframe = subset(kudmedwiframe,Island!="paradise")
 
-
-#pdf("7.18Crabs201617NormCompiledAnalysis.pdf")
+#pdf("7.19Crabs201617NormCompiledAnalysis.pdf")
 meltmcpallwiframe <- melt(mcpmedwiframe,id=c("CrabNum","Island","Year"))
 meltmcpallwiframe$type = revalue(substr(meltmcpallwiframe$variable,1,2),c("95" = "mcp95","50" = "mcp50"))
 meltmcpallwiframe$variable = substr(meltmcpallwiframe$variable,3,100)
@@ -550,6 +562,20 @@ dfallmedian = rbind(dfmcpallmedian,dfkudallmedian)
 p <- ggplot(data=dfallmedian,aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
   #geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2, position=position_dodge(.9)) + 
   ggtitle("Median Habitat Selection Ratio for Coconut Crabs 16-17") + coord_cartesian(ylim = c(0, 1.5)) + ylab("Selection Ratio") + xlab("Habitat Type")
+p
+
+
+p <- ggplot(data=meltall,aes(x=variable,y=value,fill=type)) + geom_boxplot() + facet_wrap(~Island) + 
+  ggtitle("BoxPlot Habitat Selection Ratio for Coconut Crabs 16-17, By Island") + ylab("Selection Ratio") + xlab("Habitat Type")
+p
+
+
+p <- ggplot(data=subset(meltall,type=="kud95"),aes(x=variable,y=value,fill=variable)) + geom_boxplot() + facet_wrap(~Island) + 
+  ggtitle("BoxPlot Habitat Selection Ratio for Coconut Crabs 16-17, KUD95 only By Island") + ylab("Selection Ratio") + xlab("Habitat Type")
+p
+
+p <- ggplot(data=subset(meltall,type=="kud95"),aes(x=variable,y=value,fill=variable)) + geom_boxplot() + 
+  ggtitle("BoxPlot Habitat Selection Ratio for Coconut Crabs 16-17, KUD95 only, pooled") + ylab("Selection Ratio") + xlab("Habitat Type")
 p
 
 #All crabs ever, plotting by year
@@ -638,6 +664,9 @@ p <- ggplot(data=meltcrabkud,aes(x=variable,y=value,fill=variable)) + geom_violi
   stat_summary(fun.data="mean_sdl",geom="pointrange") + ggtitle("% Crab Home Range in Each Habitat Type By Island") + facet_wrap(~Island) + coord_cartesian(ylim = c(0, 1)) + ylab("% Home Range in Habitat") + xlab("Habitat Type") 
 p
 
+#Area of 50%/95% KUD over time
+ggplot(k50melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 50% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (units needed)")
+ggplot(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 95% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (units needed)")
 
 dev.off()
 
@@ -646,7 +675,10 @@ dev.off()
 
 
 ##### Abacus plot of hits ######
-pdf("7.17HourMedianCrabHitsPerHour.pdf")
+#pdf("7.19HomeRangeAndCrabHitsPerHour.pdf")
+breaks <- function(lim) {
+  return(seq( floor(lim[1]),ceil(lim[2]),6))
+}
 abacus<-function(state_rec, times,states=NULL,labels=NULL,add=FALSE,xlim=NULL,tunit="month", format="%m/%y",col="black",
                  ylab="Station",xlab="date",yline=4,xline=3,xcex=1.5,ycex=1.5,cex.yaxis=.75,cex.xaxis=.75,pch=15,main="Crab"){
   length.out<-length(state_rec)
@@ -679,7 +711,35 @@ abacus<-function(state_rec, times,states=NULL,labels=NULL,add=FALSE,xlim=NULL,tu
 for (crab in unique(HourlyMedianDF$CrabNum)) {
   thisCrabTrax = subset(HourlyMedianDF,CrabNum==crab) 
   thisDateVec = as.POSIXct(thisCrabTrax$DateTime,format="%Y-%m-%d %H:%M:%S")
-  abacus(state_rec=thisCrabTrax$CrabNum,times=thisDateVec,states=unique(thisCrabTrax$CrabNum),format="%m/%d, %H:%M",tunit="21600 s",xcex=1,xlab="Crab",ylab="Entries",col=revalue(thisCrabTrax$Island,c("cooper"="red","sand"="yellow","paradise"="green","eastern"="blue")),main=paste("Crab No.",crab))
+  abacus(state_rec=thisCrabTrax$CrabNum,times=thisDateVec,states=unique(thisCrabTrax$CrabNum),format="%m/%d, %H:%M",tunit="21600 s",xcex=1,xlab="",ylab="Entries",col=revalue(thisCrabTrax$Island,c("cooper"="red","sand"="yellow","eastern"="blue")),main=paste("Crab No.",crab))
+  g <- ggplot(k50melt[which(k50melt$CrabNum==crab),],aes(x=variable,y=value)) + geom_line() + ggtitle(paste("Area of 50% KUD over time, crab number:",crab)) + xlab("Time Elapsed (Hours)") + ylab("Area (km^2)") + scale_x_continuous(breaks = breaks)
+  print(g)
+  g <- ggplot(k95melt[which(k95melt$CrabNum==crab),],aes(x=variable,y=value)) + geom_line()+ ggtitle(paste("Area of 95% KUD over time, crab number:",crab)) + xlab("Time Elapsed (Hours)") + ylab("Area (km^2)")
+  print(g)
 }
-dev.off()
+#dev.off()
+
+
+#write.csv(kernel50Area,"7.17kernel50area")
+#write.csv(kernel95Area,"7.17kernel95area")
+
+kernel50Area <- read.csv("7.17kernel50area")
+kernel95Area <- read.csv("7.17kernel95area")
+kernel50Area = kernel50Area[,which(colnames(kernel50Area)!="X")]
+kernel95Area = kernel95Area[,which(colnames(kernel95Area)!="X")]
+colnames(kernel50Area)[1:48] = substr(colnames(kernel50Area)[1:48],2,1000)
+colnames(kernel95Area)[1:48] = substr(colnames(kernel95Area)[1:48],2,1000)
+k50melt <- melt(kernel50Area,id=c("Island","CrabNum"))
+k95melt <- melt(kernel95Area,id=c("Island","CrabNum"))
+k50melt$variable = as.numeric(k50melt$variable)*6
+k95melt$variable = as.numeric(k95melt$variable)*6
+k50melt = subset(k50melt,value>0)
+k95melt = subset(k95melt,value>0)
+
+ggplot(k50melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 50% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (units needed)")
+ggplot(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 95% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (units needed)")
+
+
+ggplot(k50melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200),ylim=c(0,5))
+ggplot(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200),ylim=c(0,5))
 
