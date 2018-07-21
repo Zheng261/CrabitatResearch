@@ -1,4 +1,30 @@
 crabs201X <- read.csv("crabs201XAll.csv")
+#Begins analyzing island habitat distribution
+allLocations = data.frame(matrix(ncol=4,nrow=4))
+colnames(allLocations) = c("Cocos","Natives","Scaevola","Sand")
+rownames(allLocations) = islands
+
+#Loops through all islands, imports their QGIS-cropped images, and calculates their habitat ratios
+islandList <- list()
+for (isle in islands) {
+  classedIsle = raster(paste0(isle,".tif"))
+  #Converts classified habitat spatial image into global coordinates
+  r.pts <- rasterToPoints(classedIsle, spatial=TRUE)
+  proj4string(r.pts)
+  islecoordpts <- spTransform(r.pts, CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+  islecoordpts@data <- data.frame(islecoordpts@data, long=coordinates(islecoordpts)[,1],
+                                  lat=coordinates(islecoordpts)[,2])
+  #Removes all duplicates from classified satellite imagery
+  islecoordpts@data = islecoordpts@data[!duplicated(islecoordpts@data[,1:3]),]
+  islandList[[isle]] <- islecoordpts@data
+  colnames(islecoordpts@data) <- c("class","long","lat")
+  #View(islecoordpts@data)
+  totalavailhab = table(islecoordpts@data[,"class"])
+  allLocations[isle,"Cocos"] = totalavailhab[1]/sum(totalavailhab)
+  allLocations[isle,"Natives"] = totalavailhab[2]/sum(totalavailhab)
+  allLocations[isle,"Scaevola"] = totalavailhab[3]/sum(totalavailhab)
+  allLocations[isle,"Sand"] = totalavailhab[4]/sum(totalavailhab)
+}
 
 #############################
 ##### NORMALIZED POINTS #####
@@ -80,7 +106,7 @@ HourlyTrackDF$Island = as.character(HourlyTrackDF$Island)
 
 #Removes all zero rows, of which there are quite many
 HourlyTrackDF = HourlyTrackDF[which(HourlyTrackDF$NumEntries!=0),]
-HourlyTrackDF = HourlyTrackDF[-which(HourlyTrackDF$Island=="paradise"),]
+HourlyTrackDF = HourlyTrackDF[which(HourlyTrackDF$Island!="paradise"),]
 HourlyTrackDataDF = data.frame(matrix(nrow=length(unique(HourlyTrackDF$CrabNum)),ncol=11))
 HourlyTrackDataDF[,] = 0
 colnames(HourlyTrackDataDF) <- c("CrabNum","Island","NumEntries","TotalCocos","TotalNatives","TotalScaevola","TotalSand","AvailCocos","AvailNatives","AvailScaevola","AvailSand")
@@ -135,31 +161,36 @@ data_summary <- function(data, varname, groupnames){
 meltHourlyTrackDataDF <- melt(HourlyTrackDataDF[,c("Island","CocosWI","NativesWI","ScaevolaWI","SandWI")],id=c("Island"))
 dfHourlyNorm <- data_summary(meltHourlyTrackDataDF,varname="value",groupnames=c("Island","variable"))
 
+### VISUALIZES NORMALIZED POINTS ###
 
-
-#pdf("7.16NormalizedCrabTracksv2.pdf")
+#pdf("7.20NormalizedCrabTracks.pdf")
 #All crabs ever, plotting selection ratios of habitats by island
-p <- ggplot(data=dfHourlyNorm,aes(x=Island,y=value,fill=variable)) + geom_bar(stat="identity",position=position_dodge()) +
+p <- ggplot(data=dfHourlyNorm,aes(x=variable,y=value,fill=variable)) + geom_bar(stat="identity",position=position_dodge()) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
-                position=position_dodge(.9)) + ggtitle("Average Habitat Selection Ratio for Coconut Crabs 16-17, \nNormalized Entries, Tracks Only")
-#print(p)
+                position=position_dodge(.9)) + facet_wrap(~Island) +  ggtitle("Average Habitat Selection Ratio for Coconut Crabs 16-17, \nNormalized Entries, Tracks Only") + ylab("Selection Ratio") + xlab("Island")
+print(p)
+
+
+p <- ggplot(data=meltHourlyTrackDataDF,aes(x=variable,y=value,fill=variable)) + geom_boxplot() + facet_wrap(~Island) + 
+  ggtitle("BoxPlot Habitat Selection Ratio for Normalized Coconut Crabs 16-17, By Island") + ylab("Selection Ratio") + xlab("Habitat Type")
+p
 
 #Analysis of crab selection by island, comparing actual track% presence vs. available presence
 meltNormFrameAll = melt(HourlyTrackDataDF[,-c(1,3,12:15)],id=c("Island"))
 relativem <- data_summary(meltNormFrameAll,varname="value",groupnames= c("Island","variable"))
-relativem$Island = paste(relativem$Island,substr(relativem$variable,1,5))
+relativem$Avail = substr(relativem$variable,1,5)
 relativem$variable = substr(relativem$variable,6,200)
-p <- ggplot(data=relativem,aes(x=Island,y=value,fill=variable)) + geom_bar(stat="identity",position=position_dodge()) +
+p <- ggplot(data=relativem,aes(x=Avail,y=value,fill=variable)) + geom_bar(stat="identity",position=position_dodge()) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
-                position=position_dodge(.9)) + theme(text = element_text(size=10),
-                                                     axis.text.x = element_text(angle=60, hjust=1)) + ggtitle("% Crab Tracks in Each Habitat Type by Island, \nNormalized, Compared to Real Habitat Ratio") 
+                position=position_dodge(.9)) + facet_wrap(~Island) + theme(text = element_text(size=10),
+                                                     axis.text.x = element_text(angle=60, hjust=1)) + ggtitle("% Crab Tracks in Each Habitat Type by Island, \nNormalized, Compared to Real Habitat Ratio") + ylab("Habitat %") + xlab("Avail vs. Total")
 print(p)
 
 p <- ggplot(data=meltHourlyTrackDataDF,aes(x=variable,y=value,fill=variable)) + geom_violin(position=position_dodge()) +
   stat_summary(fun.y="mean",geom="point",position=position_dodge(0.9)) + ggtitle("Crab Selection Ratio in Each Habitat Type By Island") + facet_wrap(~Island)
-p
+print(p)
 
-dev.off()
+#dev.off()
 
 ############################
 ##### MEDIAN APPROACH ######
@@ -288,9 +319,6 @@ for (crab in unique(HourlyMedianDF$CrabNum)) {
 }
 #dev.off()
 #saveRDS(crabHRList, file = "crabHRdata.rds")
-
-
-
 
 
 
@@ -531,7 +559,7 @@ kudmedframe = subset(kudmedframe,Island!="paradise")
 mcpmedwiframe = subset(mcpmedwiframe,Island!="paradise")
 kudmedwiframe = subset(kudmedwiframe,Island!="paradise")
 
-#pdf("7.19Crabs201617NormCompiledAnalysis.pdf")
+#pdf("7.20Crabs201617NormCompiledAnalysis.pdf")
 meltmcpallwiframe <- melt(mcpmedwiframe,id=c("CrabNum","Island","Year"))
 meltmcpallwiframe$type = revalue(substr(meltmcpallwiframe$variable,1,2),c("95" = "mcp95","50" = "mcp50"))
 meltmcpallwiframe$variable = substr(meltmcpallwiframe$variable,3,100)
@@ -550,33 +578,38 @@ p
 
 #All crabs ever, plotting in general
 #Mean
-p <- ggplot(data=dfall,aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+p <- ggplot(data=dfall[which(dfall$type=="mcp95" | dfall$type=="mcp50"),],aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
-                position=position_dodge(.9)) + ggtitle("Average Habitat Selection Ratio for Coconut Crabs 16-17") + coord_cartesian(ylim = c(0, 3)) + ylab("Selection Ratio") + xlab("Habitat Type")
+                position=position_dodge(.9)) + ggtitle("Average Habitat Selection Ratio for Coconut Crabs 16-17, MCP") + coord_cartesian(ylim = c(0, 3)) + ylab("Selection Ratio") + xlab("Habitat Type")
+p
+
+p <- ggplot(data=dfall[which(dfall$type=="kud95" | dfall$type=="kud50"),],aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+  geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
+                position=position_dodge(.9)) + ggtitle("Average Habitat Selection Ratio for Coconut Crabs 16-17, KUD") + coord_cartesian(ylim = c(0, 3)) + ylab("Selection Ratio") + xlab("Habitat Type")
 p
 
 #Median
 dfmcpallmedian <- data_summarymed(meltmcpallwiframe,varname="value",groupnames=c("type","variable"))
 dfkudallmedian <- data_summarymed(meltkudallwiframe,varname="value",groupnames=c("type","variable"))
 dfallmedian = rbind(dfmcpallmedian,dfkudallmedian)
-p <- ggplot(data=dfallmedian,aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+p <- ggplot(data=dfallmedian[which(dfallmedian$type=="kud95" | dfallmedian$type=="kud50"),],aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
   #geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2, position=position_dodge(.9)) + 
-  ggtitle("Median Habitat Selection Ratio for Coconut Crabs 16-17") + coord_cartesian(ylim = c(0, 1.5)) + ylab("Selection Ratio") + xlab("Habitat Type")
+  ggtitle("Median Habitat Selection Ratio for Coconut Crabs 16-17, KUD") + coord_cartesian(ylim = c(0, 1.5)) + ylab("Selection Ratio") + xlab("Habitat Type")
 p
 
-
-p <- ggplot(data=meltall,aes(x=variable,y=value,fill=type)) + geom_boxplot() + facet_wrap(~Island) + 
-  ggtitle("BoxPlot Habitat Selection Ratio for Coconut Crabs 16-17, By Island") + ylab("Selection Ratio") + xlab("Habitat Type")
+p <- ggplot(data=dfallmedian[which(dfallmedian$type=="mcp95" | dfallmedian$type=="mcp50"),],aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+  #geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2, position=position_dodge(.9)) + 
+  ggtitle("Median Habitat Selection Ratio for Coconut Crabs 16-17, MCP") + coord_cartesian(ylim = c(0, 1.5)) + ylab("Selection Ratio") + xlab("Habitat Type")
 p
 
-
-p <- ggplot(data=subset(meltall,type=="kud95"),aes(x=variable,y=value,fill=variable)) + geom_boxplot() + facet_wrap(~Island) + 
-  ggtitle("BoxPlot Habitat Selection Ratio for Coconut Crabs 16-17, KUD95 only By Island") + ylab("Selection Ratio") + xlab("Habitat Type")
+p <- ggplot(data=meltall[which(meltall$type=="mcp95" | meltall$type=="mcp50"),],aes(x=variable,y=value,fill=type)) + geom_boxplot() + facet_wrap(~Island) + 
+  ggtitle("BoxPlot Habitat Selection Ratio for Coconut Crabs 16-17, By Island, MCP") + ylab("Selection Ratio") + xlab("Habitat Type") + coord_cartesian(ylim = c(0, 4))
 p
 
-p <- ggplot(data=subset(meltall,type=="kud95"),aes(x=variable,y=value,fill=variable)) + geom_boxplot() + 
-  ggtitle("BoxPlot Habitat Selection Ratio for Coconut Crabs 16-17, KUD95 only, pooled") + ylab("Selection Ratio") + xlab("Habitat Type")
+p <- ggplot(data=meltall[which(meltall$type=="kud95" | meltall$type=="kud50"),],aes(x=variable,y=value,fill=type)) + geom_boxplot() + facet_wrap(~Island) + 
+  ggtitle("BoxPlot Habitat Selection Ratio for Coconut Crabs 16-17, By Island, KUD") + ylab("Selection Ratio") + xlab("Habitat Type") + coord_cartesian(ylim = c(0, 4))
 p
+
 
 #All crabs ever, plotting by year
 dfmcpallvy <- data_summary(meltmcpallwiframe,varname="value",groupnames=c("type","variable","Year"))
@@ -591,10 +624,16 @@ p
 dfmcpallvi <- data_summary(meltmcpallwiframe,varname="value",groupnames=c("type","variable","Island"))
 dfkudallvi <- data_summary(meltkudallwiframe,varname="value",groupnames=c("type","variable","Island"))
 dfallvi = rbind(dfmcpallvi,dfkudallvi)
-p <- ggplot(data=dfallvi,aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+p <- ggplot(data=dfallvi[which(dfallvi$type=="mcp95" | dfallvi$type=="mcp50"),],aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
                 position=position_dodge(.9)) + theme(text = element_text(size=10),
-                                                     axis.text.x = element_text(angle=60, hjust=1)) +  ggtitle("Average Habitat Selection Ratio for Coconut Crabs By Island") + coord_cartesian(ylim = c(0, 4)) + facet_wrap(~Island) + ylab("Selection Ratio") + xlab("Habitat Type")
+                                                     axis.text.x = element_text(angle=60, hjust=1)) +  ggtitle("Average Habitat Selection Ratio for Coconut Crabs By Island, MCP") + coord_cartesian(ylim = c(0, 4)) + facet_wrap(~Island) + ylab("Selection Ratio") + xlab("Habitat Type")
+p
+
+p <- ggplot(data=dfallvi[which(dfallvi$type=="kud95" | dfallvi$type=="kud50"),],aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+  geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
+                position=position_dodge(.9)) + theme(text = element_text(size=10),
+                                                     axis.text.x = element_text(angle=60, hjust=1)) +  ggtitle("Average Habitat Selection Ratio for Coconut Crabs By Island, KUD") + coord_cartesian(ylim = c(0, 4)) + facet_wrap(~Island) + ylab("Selection Ratio") + xlab("Habitat Type")
 p
 
 #Analysis of crab selection by island
@@ -619,11 +658,30 @@ relativeall$varIsle = paste(relativeall$variable,relativeall$Island)
 relativeall$sd[is.na(relativeall$sd)] = 0
 relativeall$value = as.numeric(relativeall$value)
 relativeall$sd = as.numeric(relativeall$sd)
-p <- ggplot(data=relativeall,aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+
+p <- ggplot(data=subset(relativeall,type=="mcp95" | type=="actual"),aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
                 position=position_dodge(.9)) + theme(text = element_text(size=10),
-                                                    axis.text.x = element_text(angle=60, hjust=1)) + ggtitle("% Crab Home Range in Each Habitat Type by Island, Compared to Real Habitat Ratio") + facet_wrap(~Island) + coord_cartesian(ylim = c(0, 1)) + ylab("% Home Range in Habitat") + xlab("Habitat Type")
+                                                    axis.text.x = element_text(angle=60, hjust=1)) + ggtitle("% Crab Home Range (MCP95) in Each Habitat Type by Island, Compared to Real Habitat Ratio") + facet_wrap(~Island) + coord_cartesian(ylim = c(0, 1)) + ylab("% Home Range in Habitat") + xlab("Habitat Type")
 #+ theme_minimal()
+p
+
+p <- ggplot(data=subset(relativeall,type=="mcp50" | type=="actual"),aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+  geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
+                position=position_dodge(.9)) + theme(text = element_text(size=10),
+                                                     axis.text.x = element_text(angle=60, hjust=1)) + ggtitle("% Crab Home Range (MCP50) in Each Habitat Type by Island, Compared to Real Habitat Ratio") + facet_wrap(~Island) + coord_cartesian(ylim = c(0, 1)) + ylab("% Home Range in Habitat") + xlab("Habitat Type")
+p
+
+p <- ggplot(data=subset(relativeall,type=="kud95" | type=="actual"),aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+  geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
+                position=position_dodge(.9)) + theme(text = element_text(size=10),
+                                                     axis.text.x = element_text(angle=60, hjust=1)) + ggtitle("% Crab Home Range (KUD95) in Each Habitat Type by Island, Compared to Real Habitat Ratio") + facet_wrap(~Island) + coord_cartesian(ylim = c(0, 1)) + ylab("% Home Range in Habitat") + xlab("Habitat Type")
+p
+
+p <- ggplot(data=subset(relativeall,type=="kud50" | type=="actual"),aes(x=variable,y=value,fill=type)) + geom_bar(stat="identity",position=position_dodge()) +
+  geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
+                position=position_dodge(.9)) + theme(text = element_text(size=10),
+                                                     axis.text.x = element_text(angle=60, hjust=1)) + ggtitle("% Crab Home Range (KUD50) in Each Habitat Type by Island, Compared to Real Habitat Ratio") + facet_wrap(~Island) + coord_cartesian(ylim = c(0, 1)) + ylab("% Home Range in Habitat") + xlab("Habitat Type")
 p
 
 meltcraball = rbind(meltmcpframeall,meltkudframeall)
@@ -637,11 +695,9 @@ for (isle in 1:nrow(allLocations)) {
 }
 meltcraball$value = as.numeric(meltcraball$value)
 meltcraball$varIsle = paste(meltcraball$variable,meltcraball$Island)
-
-
 meltcrabactual <- subset(meltcraball,type=="actual")
 p <- ggplot(data=meltcrabactual,aes(x=variable,y=value,fill=variable)) + geom_bar(stat="identity",position=position_dodge()) +
- ggtitle("% Habitat Availability by Island, Compared to Real Habitat Ratio") + facet_wrap(~Island) + ylab("% Available Habitat") + xlab("Habitat Type") + coord_cartesian(ylim = c(0, 1))
+ ggtitle("% Habitat Availability by Island") + facet_wrap(~Island) + ylab("% Available Habitat") + xlab("Habitat Type") + coord_cartesian(ylim = c(0, 1))
 p
 
 
@@ -653,11 +709,17 @@ p <- ggplot(data=subset(meltall,type=="kud95"),aes(x=variable,y=value)) + geom_v
   stat_summary(fun.data=mean_sdl,geom="pointrange",position=position_dodge(0.9)) + ggtitle("Average Habitat Selection Ratio for Coconut Crabs 16-17, KUD95") + coord_cartesian(ylim = c(0, 5)) 
 p
 
+p <- ggplot(data=subset(meltall,type=="kud95"),aes(x=variable,y=value,fill=variable)) + geom_boxplot() + 
+  ggtitle("BoxPlot Habitat Selection Ratio for Coconut Crabs 16-17, KUD95 only, pooled") + ylab("Selection Ratio") + xlab("Habitat Type")
+p
+
 p <- ggplot(data=subset(dfallvi,type=="kud95"),aes(x=variable,y=value,fill=variable)) + geom_bar(stat="identity",position=position_dodge()) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
                 position=position_dodge(.9)) + theme(text = element_text(size=10),
-                                                     axis.text.x = element_text(angle=60, hjust=1)) +  ggtitle("Average Habitat Selection Ratio for Coconut Crabs By Island, KUD95") + coord_cartesian(ylim = c(0, 4)) + facet_wrap(~Island) + ylab("Selection Ratio") + xlab("Habitat Type")
+                                                     axis.text.x = element_text(angle=60, hjust=1)) +  ggtitle("Average Habitat Selection Ratio for Coconut Crabs By Island, KUD95") + coord_cartesian(ylim = c(0, 3)) + facet_wrap(~Island) + ylab("Selection Ratio") + xlab("Habitat Type")
 p
+
+
 
 meltcrabkud = subset(meltcraball,type=="kud95")
 p <- ggplot(data=meltcrabkud,aes(x=variable,y=value,fill=variable)) + geom_violin(position=position_dodge()) +
@@ -668,7 +730,7 @@ p
 ggplot(k50melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 50% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (units needed)")
 ggplot(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 95% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (units needed)")
 
-dev.off()
+#dev.off()
 
 
 

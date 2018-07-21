@@ -124,6 +124,7 @@ landvwater = predict(img, rf.mdl.mask, filename="6.26-Palmyra-RF-mask-v1.img", t
 #This kind of takes forever and idk why
 landOnly = mask(img,landvwater,filename="6.27-Palmyra-ALL-BANDS-MASKED-v2.tif",maskvalue=0,updatevalue=NA,overwrite=TRUE)
 names(landOnly) <- c(paste0("T",1:8, coll=""), paste0("B",1:8, coll="")) #renames bands to shortened designations
+
 ############################
 ###### CLASSIFICATION ######
 ############################
@@ -135,8 +136,6 @@ View(trainingData)
 
 # Remove rows with land=0.
 trainingData.2 <- subset(trainingData, land!= 0)
-
-
 
 # You can remove layers from trainingData.2 if you want to do some feature selection, meaning selectively paring down your number of bands
 # in such a way that can improve classification accuracy:

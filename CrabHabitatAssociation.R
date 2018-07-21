@@ -1,5 +1,4 @@
 install.packages("adehabitatHS")
-
 library(adehabitatHS)
 
 # Import smoothed classification image:
