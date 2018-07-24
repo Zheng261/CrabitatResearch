@@ -1,10 +1,17 @@
 crabs201X <- read.csv("crabs201XAll.csv")
+classed <- raster("6.26MASKEDPalmyra-RF-classification-v3-5x5-modal.tif") # Took 5x5 MODAL average
 #Begins analyzing island habitat distribution
 allLocations = data.frame(matrix(ncol=4,nrow=4))
 colnames(allLocations) = c("Cocos","Natives","Scaevola","Sand")
 rownames(allLocations) = islands
 
 #Loops through all islands, imports their QGIS-cropped images, and calculates their habitat ratios
+islands = c("sand","cooper","eastern","paradise")
+islandList = c()
+otherCrabList = list.files("../Palmyra Crab Research/Crab tagging/crab tracks 2017/2017 crab tracks CSV")
+for (island in islands) {
+  islandList[as.integer(substr(otherCrabList[grep(island,otherCrabList)],22,23))] = island
+}
 islandList <- list()
 for (isle in islands) {
   classedIsle = raster(paste0(isle,".tif"))
