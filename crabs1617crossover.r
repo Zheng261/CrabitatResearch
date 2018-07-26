@@ -41,6 +41,8 @@ for (name in crabList) {
 crabs2017 = crabs2017[which(!is.na(crabs2017$Latitude)),]
 
 
+subset(crabs2017,CrabNum=="30")[c(1:30),]
+taggedMetaData17[30,]
 
 ####### Crabs 2016 #######
 # Initialized crab tracking import. All files are filtered for speed and water

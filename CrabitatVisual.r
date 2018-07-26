@@ -26,10 +26,10 @@ testUTMSL@lines
 plot(testUTMSL,pch=15,cex=0.3,lend=15,ljoin=4,lwd=2,lty=1,add=TRUE)
 dev.off()
 
-
 #Plots individual crab tracks per island, by day
-pdf("CrabVisualTracks.pdf")
+pdf("7.25CrabVisualTracks.pdf")
 for (crab in unique(crabs201X$CrabNum)) {
+  print(crab)
   crabList = list()
   thisCrabTrax = crabs201X[which(crabs201X$CrabNum == crab),]
   island = thisCrabTrax[1,"Island"]
@@ -46,7 +46,7 @@ for (crab in unique(crabs201X$CrabNum)) {
   testUTMSL = spTransform(testSL,"+proj=utm +zone=3 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
   #plot(testUTMSL,col=colors,pch=15,cex=0.3,lend=15,ljoin=4,lwd=2,lty=1)
   plot(testUTMSL,col=colors,pch=15,cex=0.3,lend=15,ljoin=4,lwd=2,lty=1,add=TRUE)
-  legend(title=paste("Crab:",crab),x=(imgtest@extent[1]+imgtest@extent[2])/2,y=(imgtest@extent[3]+imgtest@extent[4])/2,legend=unique(thisCrabTrax$Date),col=colors,lty=1,cex=0.75)
+  legend(title=paste("Crab:",crab),x="upperleft",legend=unique(thisCrabTrax$Date),col=colors,lty=1,cex=0.75)
 }
 dev.off()
 

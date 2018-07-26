@@ -1,4 +1,6 @@
 crabs201X <- read.csv("crabs201XAll.csv")
+crabs201X$Island = as.character(crabs201X$Island)
+
 classed <- raster("6.26MASKEDPalmyra-RF-classification-v3-5x5-modal.tif") # Took 5x5 MODAL average
 #Begins analyzing island habitat distribution
 allLocations = data.frame(matrix(ncol=4,nrow=4))
@@ -12,7 +14,7 @@ otherCrabList = list.files("../Palmyra Crab Research/Crab tagging/crab tracks 20
 for (island in islands) {
   islandList[as.integer(substr(otherCrabList[grep(island,otherCrabList)],22,23))] = island
 }
-islandList <- list()
+islandCoordsList <- list()
 for (isle in islands) {
   classedIsle = raster(paste0(isle,".tif"))
   #Converts classified habitat spatial image into global coordinates
@@ -23,7 +25,7 @@ for (isle in islands) {
                                   lat=coordinates(islecoordpts)[,2])
   #Removes all duplicates from classified satellite imagery
   islecoordpts@data = islecoordpts@data[!duplicated(islecoordpts@data[,1:3]),]
-  islandList[[isle]] <- islecoordpts@data
+  islandCoordsList[[isle]] <- islecoordpts@data
   colnames(islecoordpts@data) <- c("class","long","lat")
   #View(islecoordpts@data)
   totalavailhab = table(islecoordpts@data[,"class"])
@@ -60,6 +62,7 @@ findClosestPoint <- function(x,y,df) {
 
 
 for (crab in unique(crabs201X$CrabNum)) {
+  print(crab)
   #Grabs everything for each crab
   thisCrabTrax = subset(crabs201X,CrabNum==crab) 
   #Calculates date range of crab and figures out how many hourly rows we'll need
@@ -107,8 +110,8 @@ for (crab in unique(crabs201X$CrabNum)) {
 }
 
 ## imports if we don't want to run the above code again
-HourlyTrackDF <- read.csv("HourlyTrackNormalizedCrabsDF.csv")
-HourlyTrackDF = HourlyTrackDF[,which(colnames(HourlyTrackDF)!="X")]
+#HourlyTrackDF <- read.csv("HourlyTrackNormalizedCrabsDF.csv")
+#HourlyTrackDF = HourlyTrackDF[,which(colnames(HourlyTrackDF)!="X")]
 HourlyTrackDF$Island = as.character(HourlyTrackDF$Island)
 
 #Removes all zero rows, of which there are quite many
@@ -170,7 +173,7 @@ dfHourlyNorm <- data_summary(meltHourlyTrackDataDF,varname="value",groupnames=c(
 
 ### VISUALIZES NORMALIZED POINTS ###
 
-#pdf("7.20NormalizedCrabTracks.pdf")
+pdf("7.25NormalizedCrabTracks.pdf")
 #All crabs ever, plotting selection ratios of habitats by island
 p <- ggplot(data=dfHourlyNorm,aes(x=variable,y=value,fill=variable)) + geom_bar(stat="identity",position=position_dodge()) +
   geom_errorbar(aes(ymin=value-sd, ymax=value+sd), width=.2,
@@ -179,7 +182,7 @@ print(p)
 
 
 p <- ggplot(data=meltHourlyTrackDataDF,aes(x=variable,y=value,fill=variable)) + geom_boxplot() + facet_wrap(~Island) + 
-  ggtitle("BoxPlot Habitat Selection Ratio for Normalized Coconut Crabs 16-17, By Island") + ylab("Selection Ratio") + xlab("Habitat Type")
+  ggtitle("BoxPlot Habitat Selection Ratio for Normalized Coconut Crabs Tracks 16-17, By Island") + ylab("Selection Ratio") + xlab("Habitat Type")
 p
 
 #Analysis of crab selection by island, comparing actual track% presence vs. available presence
@@ -242,9 +245,17 @@ for (crab in unique(crabs201X$CrabNum)) {
 HourlyMedianDF = HourlyMedianDF[which(HourlyMedianDF$Latitude != 0),]
 HourlyMedianDF = subset(HourlyMedianDF,CrabNum!=133)
 
+
+
+
+##########################################
+##### MEDIAN APPROACH VISUALIZATION ######
+########################################
+
 #Plots individual median-obtained crab tracks per island, by day
-#pdf("7.16TimeMedianCrabVisualTracks.pdf")
+#pdf("7.25TimeMedianCrabVisualTracks.pdf")
 for (crab in unique(HourlyMedianDF$CrabNum)) {
+  print(crab)
   crabList = list()
   thisCrabTrax = HourlyMedianDF[which(HourlyMedianDF$CrabNum == crab),]
   thisCrabTrax$Date = substr(thisCrabTrax$DateTime,1,10)
@@ -268,7 +279,7 @@ for (crab in unique(HourlyMedianDF$CrabNum)) {
 
 fiftyoffset = 50
 kudoffset = 100
-#pdf("7.16just134.pdf")
+#pdf("7.25RetrimmedMedianKUDs.pdf")
 #Generates a list to add different HR estimates to
 crabHRList = list()
 
@@ -325,7 +336,7 @@ for (crab in unique(HourlyMedianDF$CrabNum)) {
          col=c(rainbow(4)[1], rainbow(4)[2]), lty=1, cex=1)
 }
 #dev.off()
-#saveRDS(crabHRList, file = "crabHRdata.rds")
+#saveRDS(crabHRList, file = "7.20crabHRdata.rds")
 
 
 
@@ -344,8 +355,10 @@ colnames(kudmedframe) <- c("CrabNum","Island","95Cocos","95Natives","95Scaevola"
 mcpmedframe$CrabNum = unique(HourlyMedianDF$CrabNum)
 kudmedframe$CrabNum = unique(HourlyMedianDF$CrabNum)
 View(head(HourlyMedianDF))
+
 #Calculates amount of available habitat in crab home range (95%/50% mcp16)
 for (crab in 1:nrow(mcpmedframe)) {
+  print(crab)
   mcpmedframe[crab,"Island"] = substr(HourlyMedianDF[HourlyMedianDF$CrabNum==mcpmedframe[crab,"CrabNum"],][1,"Island"],0,100)
   mcpmedframe[crab,"AvailCocos"] = allLocations[mcpmedframe[crab,"Island"],"Cocos"]
   mcpmedframe[crab,"AvailNatives"] = allLocations[mcpmedframe[crab,"Island"],"Natives"]
@@ -353,15 +366,15 @@ for (crab in 1:nrow(mcpmedframe)) {
   mcpmedframe[crab,"AvailSand"] = allLocations[mcpmedframe[crab,"Island"],"Sand"]
   thisCrabIsland = islandRasterList[[mcpmedframe[crab,"Island"]]]
   #95% mcp16
-  maskedIsland95 = mask(thisCrabIsland,crabHRList[[mcpmedframe[crab,"CrabNum"]]])
-  
+  maskedIsland95 = raster::mask(thisCrabIsland,crabHRList[[mcpmedframe[crab,"CrabNum"]]])
   masked95pts <- rasterToPoints(maskedIsland95, spatial=TRUE)
   masked95tb <- table(masked95pts@data)  
   masked95tb[c("0","1","2","5")[is.na(masked95tb[c("0","1","2","5")])]] = 0
   masked95tb = masked95tb[c("0","1","2","5")]
   mcpmedframe[crab,c("95Cocos","95Natives","95Scaevola","95Sand")] <- masked95tb
+  
   #50% mcp16
-  maskedIsland50 = mask(thisCrabIsland,crabHRList[[mcpmedframe[crab,"CrabNum"]+fiftyoffset]])
+  maskedIsland50 = raster::mask(thisCrabIsland,crabHRList[[mcpmedframe[crab,"CrabNum"]+fiftyoffset]])
   masked50pts <- rasterToPoints(maskedIsland50, spatial=TRUE)
   masked50tb <- table(masked50pts@data)
   masked50tb[c("0","1","2","5")[is.na(masked50tb[c("0","1","2","5")])]] = 0
@@ -372,6 +385,7 @@ for (crab in 1:nrow(mcpmedframe)) {
 
 #Calculates amount of available habitat in crab home range (95%/50% kernel)
 for (crab in 1:nrow(kudmedframe)) {
+  print(crab)
   kudmedframe[crab,"Island"] = substr(HourlyMedianDF[HourlyMedianDF$CrabNum==kudmedframe[crab,"CrabNum"],][1,"Island"],0,100)
   kudmedframe[crab,"AvailCocos"] = allLocations[kudmedframe[crab,"Island"],"Cocos"]
   kudmedframe[crab,"AvailNatives"] = allLocations[kudmedframe[crab,"Island"],"Natives"]
@@ -380,14 +394,14 @@ for (crab in 1:nrow(kudmedframe)) {
   thisCrabIsland = islandRasterList[[kudmedframe[crab,"Island"]]]
 
   #95% kernel
-  maskedIsland95 = mask(thisCrabIsland,crabHRList[[kudmedframe[crab,"CrabNum"]+kudoffset]])
+  maskedIsland95 = raster::mask(thisCrabIsland,crabHRList[[kudmedframe[crab,"CrabNum"]+kudoffset]])
   masked95pts <- rasterToPoints(maskedIsland95, spatial=TRUE)
   masked95tb <- table(masked95pts@data)  
   masked95tb[c("0","1","2","5")[is.na(masked95tb[c("0","1","2","5")])]] = 0
   masked95tb = masked95tb[c("0","1","2","5")]
   kudmedframe[crab,c("95Cocos","95Natives","95Scaevola","95Sand")] <- masked95tb
   #50% kernel
-  maskedIsland50 = mask(thisCrabIsland,crabHRList[[kudmedframe[crab,"CrabNum"]+kudoffset+fiftyoffset]])
+  maskedIsland50 = raster::mask(thisCrabIsland,crabHRList[[kudmedframe[crab,"CrabNum"]+kudoffset+fiftyoffset]])
   masked50pts <- rasterToPoints(maskedIsland50, spatial=TRUE)
   masked50tb <- table(masked50pts@data)
   masked50tb[c("0","1","2","5")[is.na(masked50tb[c("0","1","2","5")])]] = 0
@@ -397,20 +411,23 @@ for (crab in 1:nrow(kudmedframe)) {
 
 
 
-#write.csv(mcpmedframe,"7.17normMCPFrame.csv")
-#write.csv(kudmedframe,"7.17normKUDFrame.csv")
-#write.csv(HourlyMedianDF,"7.17hourlymediandf.csv")
+#write.csv(mcpmedframe,"7.25normMCPFrame.csv")
+#write.csv(kudmedframe,"7.25normKUDFrame.csv")
+#write.csv(HourlyMedianDF,"7.25hourlymediandf.csv")
 
 #### READS IN FILES - START HERE FOR DATA ANALYSIS #####
-HourlyMedianDF = read.csv("7.17hourlymediandf.csv")
+HourlyMedianDF = read.csv("7.25hourlymediandf.csv")
 HourlyMedianDF = HourlyMedianDF[,which(colnames(HourlyMedianDF)!='X')]
 HourlyMedianDF = subset(HourlyMedianDF,CrabNum!=133)
-mcpmedframe <- read.csv("7.17normMCPFrame.csv")
-kudmedframe <- read.csv("7.17normKUDFrame.csv")
-mcpmedframe = mcpmedframe[,-1]
-kudmedframe = kudmedframe[,-1]
+mcpmedframe <- read.csv("7.25normMCPFrame.csv")
+kudmedframe <- read.csv("7.25normKUDFrame.csv")
+mcpmedframe = mcpmedframe[,which(colnames(mcpmedframe)!='X')]
+kudmedframe = kudmedframe[,which(colnames(kudmedframe)!='X')]
+mcpmedframe$Island = as.character(mcpmedframe$Island)
+kudmedframe$Island = as.character(kudmedframe$Island)
 colnames(mcpmedframe) <- c("CrabNum","Island","95Cocos","95Natives","95Scaevola","95Sand","50Cocos","50Natives","50Scaevola","50Sand","AvailCocos","AvailNatives","AvailScaevola","AvailSand")
 colnames(kudmedframe) <- c("CrabNum","Island","95Cocos","95Natives","95Scaevola","95Sand","50Cocos","50Natives","50Scaevola","50Sand","AvailCocos","AvailNatives","AvailScaevola","AvailSand")
+
 
 #Adds 0.0001 so widesIII isn't too angry at us
 mcpmedframe[,c("95Cocos","95Natives","95Scaevola","95Sand")] = mcpmedframe[,c("95Cocos","95Natives","95Scaevola","95Sand")]/rowSums(mcpmedframe[,c("95Cocos","95Natives","95Scaevola","95Sand")]) + 0.0001
@@ -487,7 +504,6 @@ kudmedwiframe$Year = HourlyMedianDF[which(!duplicated(HourlyMedianDF$CrabNum)),]
 #########################################
 #### Home range sufficiency analysis ####
 #########################################
-
 #Tracks for 12 days, 6 hour intervals
 kernel50Area = data.frame(matrix(nrow=nrow(kudmedframe),ncol=48))
 kernel50Area[,] = 0 
@@ -495,7 +511,6 @@ colnames(kernel50Area) = seq(6,6*48,6)
 kernel50Area$CrabNum = kudmedframe$CrabNum
 kernel50Area$Island = kudmedframe$Island
 kernel95Area = kernel50Area
-
 for (crab in kudmedframe$CrabNum) {
   print(crab)
   thisCrabTrax = HourlyMedianDF[which(HourlyMedianDF$CrabNum == crab),]
@@ -528,7 +543,72 @@ for (crab in kudmedframe$CrabNum) {
   }
 }
 
+write.csv(kernel50Area,"7.25kernel50area")
+write.csv(kernel95Area,"7.25kernel95area")
 
+kernel50Area <- read.csv("7.25kernel50area")
+kernel95Area <- read.csv("7.25kernel95area")
+kernel50Area = kernel50Area[,which(colnames(kernel50Area)!="X")]
+kernel95Area = kernel95Area[,which(colnames(kernel95Area)!="X")]
+colnames(kernel50Area)[1:48] = substr(colnames(kernel50Area)[1:48],2,1000)
+colnames(kernel95Area)[1:48] = substr(colnames(kernel95Area)[1:48],2,1000)
+k50melt <- melt(kernel50Area,id=c("Island","CrabNum"))
+k95melt <- melt(kernel95Area,id=c("Island","CrabNum"))
+k50melt$variable = as.numeric(k50melt$variable)*6
+k95melt$variable = as.numeric(k95melt$variable)*6
+k50melt = subset(k50melt,value>0)
+k95melt = subset(k95melt,value>0)
+
+ggplot(k50melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 50% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (km?)")
+ggplot(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 95% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (km?)")
+ggplot(k50melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200),ylim=c(0,5))
+ggplot(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200),ylim=c(0,5))
+
+
+##### Abacus plot of hits ######
+#pdf("7.25HomeRangeAndCrabHitsPerHour.pdf")
+breaks <- function(lim) {
+  return(seq( floor(lim[1]),ceil(lim[2]),6))
+}
+abacus<-function(state_rec, times,states=NULL,labels=NULL,add=FALSE,xlim=NULL,tunit="month", format="%m/%y",col="black",
+                 ylab="Station",xlab="date",yline=4,xline=3,xcex=1.5,ycex=1.5,cex.yaxis=.75,cex.xaxis=.75,pch=15,main="Crab"){
+  length.out<-length(state_rec)
+  if(is.null(states)){
+    states<-unique(state_rec)
+  }
+  nstates<-length(states)
+  order<-rep(1,length.out)
+  for(i in 2:nstates){
+    order[which(state_rec==states[i])]<-i
+  }
+  if(add==FALSE){
+    if(is.null(xlim)){
+      xlim<-c(min(times,na.rm=TRUE),max(times,na.rm=TRUE))
+    } 
+    if(is.null(labels)){
+      labels<-states
+    }
+    ylim<-c(.5,(nstates+.5))
+    
+    plot(main=main,0,type="n",ylim=ylim,xlim=xlim,yaxt="n",xaxt="n",xlab=" ",ylab=" ")
+    axis(2,at=seq(1:nstates),labels=labels,las=2,cex.axis=cex.yaxis)
+    axis.POSIXct(1, at=seq(xlim[1], xlim[2], by=tunit)
+                 ,format=format,las=2,cex.axis=cex.xaxis)
+    mtext(text = xlab,side = 1,line = xline, cex = xcex)
+    mtext(text = ylab,side = 2,line = yline, cex = ycex)
+  }
+  points(order ~ times,pch=pch,col=col)
+}
+for (crab in unique(HourlyMedianDF$CrabNum)) {
+  thisCrabTrax = subset(HourlyMedianDF,CrabNum==crab) 
+  thisDateVec = as.POSIXct(thisCrabTrax$DateTime,format="%Y-%m-%d %H:%M:%S")
+  abacus(state_rec=thisCrabTrax$CrabNum,times=thisDateVec,states=unique(thisCrabTrax$CrabNum),format="%m/%d, %H:%M",tunit="21600 s",xcex=1,xlab="",ylab="Entries",col=revalue(thisCrabTrax$Island,c("cooper"="red","sand"="yellow","eastern"="blue")),main=paste("Crab No.",crab))
+  g <- ggplot(k50melt[which(k50melt$CrabNum==crab),],aes(x=variable,y=value)) + geom_line() + ggtitle(paste("Area of 50% KUD over time, crab number:",crab)) + xlab("Time Elapsed (Hours)") + ylab("Area (km^2)") + scale_x_continuous(breaks = breaks)
+  print(g)
+  g <- ggplot(k95melt[which(k95melt$CrabNum==crab),],aes(x=variable,y=value)) + geom_line()+ ggtitle(paste("Area of 95% KUD over time, crab number:",crab)) + xlab("Time Elapsed (Hours)") + ylab("Area (km^2)")
+  print(g)
+}
+#dev.off()
 
 
 
@@ -566,7 +646,7 @@ kudmedframe = subset(kudmedframe,Island!="paradise")
 mcpmedwiframe = subset(mcpmedwiframe,Island!="paradise")
 kudmedwiframe = subset(kudmedwiframe,Island!="paradise")
 
-#pdf("7.20Crabs201617NormCompiledAnalysis.pdf")
+#pdf("7.25Crabs1617NormCompiledAnalysis.pdf")
 meltmcpallwiframe <- melt(mcpmedwiframe,id=c("CrabNum","Island","Year"))
 meltmcpallwiframe$type = revalue(substr(meltmcpallwiframe$variable,1,2),c("95" = "mcp95","50" = "mcp50"))
 meltmcpallwiframe$variable = substr(meltmcpallwiframe$variable,3,100)
@@ -651,14 +731,16 @@ relativemcp <- data_summary(meltmcpframeall,varname="value",groupnames= c("type"
 meltkudframeall = melt(kudmedframe[,2:10],id=c("Island"))
 meltkudframeall$type = revalue(substr(meltkudframeall$variable,1,2),c("95" = "kud95","50" = "kud50"))
 meltkudframeall$variable = substr(meltkudframeall$variable,3,100)
+relativekud$Island = as.character(relativekud$Island)
+relativemcp$Island = as.character(relativemcp$Island)
 relativekud <- data_summary(meltkudframeall,varname="value",groupnames= c("type","Island","variable"))
 relativeall = rbind(relativemcp,relativekud)
 for (isle in 1:nrow(allLocations)) {
   if (rownames(allLocations)[isle] != "paradise") {
-  relativeall[nrow(relativeall)+1,] = c("actual",rownames(allLocations)[isle],"Cocos",allLocations[isle,"Cocos"],0)
-  relativeall[nrow(relativeall)+1,] = c("actual",rownames(allLocations)[isle],"Natives",allLocations[isle,"Natives"],0)
-  relativeall[nrow(relativeall)+1,] = c("actual",rownames(allLocations)[isle],"Scaevola",allLocations[isle,"Scaevola"],0)
-  relativeall[nrow(relativeall)+1,] = c("actual",rownames(allLocations)[isle],"Sand",allLocations[isle,"Sand"],0)
+    relativeall[nrow(relativeall)+1,] = c("actual",rownames(allLocations)[isle],"Cocos",allLocations[isle,"Cocos"],0)
+    relativeall[nrow(relativeall)+1,] = c("actual",rownames(allLocations)[isle],"Natives",allLocations[isle,"Natives"],0)
+    relativeall[nrow(relativeall)+1,] = c("actual",rownames(allLocations)[isle],"Scaevola",allLocations[isle,"Scaevola"],0)
+    relativeall[nrow(relativeall)+1,] = c("actual",rownames(allLocations)[isle],"Sand",allLocations[isle,"Sand"],0)
   }
 }
 relativeall$varIsle = paste(relativeall$variable,relativeall$Island)
@@ -743,72 +825,7 @@ ggplot(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() +
 
 
 
-##### Abacus plot of hits ######
-#pdf("7.19HomeRangeAndCrabHitsPerHour.pdf")
-breaks <- function(lim) {
-  return(seq( floor(lim[1]),ceil(lim[2]),6))
-}
-abacus<-function(state_rec, times,states=NULL,labels=NULL,add=FALSE,xlim=NULL,tunit="month", format="%m/%y",col="black",
-                 ylab="Station",xlab="date",yline=4,xline=3,xcex=1.5,ycex=1.5,cex.yaxis=.75,cex.xaxis=.75,pch=15,main="Crab"){
-  length.out<-length(state_rec)
-  if(is.null(states)){
-    states<-unique(state_rec)
-  }
-  nstates<-length(states)
-  order<-rep(1,length.out)
-  for(i in 2:nstates){
-    order[which(state_rec==states[i])]<-i
-  }
-  if(add==FALSE){
-    if(is.null(xlim)){
-      xlim<-c(min(times,na.rm=TRUE),max(times,na.rm=TRUE))
-    } 
-    if(is.null(labels)){
-      labels<-states
-    }
-    ylim<-c(.5,(nstates+.5))
-    
-    plot(main=main,0,type="n",ylim=ylim,xlim=xlim,yaxt="n",xaxt="n",xlab=" ",ylab=" ")
-    axis(2,at=seq(1:nstates),labels=labels,las=2,cex.axis=cex.yaxis)
-    axis.POSIXct(1, at=seq(xlim[1], xlim[2], by=tunit)
-                 ,format=format,las=2,cex.axis=cex.xaxis)
-    mtext(text = xlab,side = 1,line = xline, cex = xcex)
-    mtext(text = ylab,side = 2,line = yline, cex = ycex)
-  }
-  points(order ~ times,pch=pch,col=col)
-}
-for (crab in unique(HourlyMedianDF$CrabNum)) {
-  thisCrabTrax = subset(HourlyMedianDF,CrabNum==crab) 
-  thisDateVec = as.POSIXct(thisCrabTrax$DateTime,format="%Y-%m-%d %H:%M:%S")
-  abacus(state_rec=thisCrabTrax$CrabNum,times=thisDateVec,states=unique(thisCrabTrax$CrabNum),format="%m/%d, %H:%M",tunit="21600 s",xcex=1,xlab="",ylab="Entries",col=revalue(thisCrabTrax$Island,c("cooper"="red","sand"="yellow","eastern"="blue")),main=paste("Crab No.",crab))
-  g <- ggplot(k50melt[which(k50melt$CrabNum==crab),],aes(x=variable,y=value)) + geom_line() + ggtitle(paste("Area of 50% KUD over time, crab number:",crab)) + xlab("Time Elapsed (Hours)") + ylab("Area (km^2)") + scale_x_continuous(breaks = breaks)
-  print(g)
-  g <- ggplot(k95melt[which(k95melt$CrabNum==crab),],aes(x=variable,y=value)) + geom_line()+ ggtitle(paste("Area of 95% KUD over time, crab number:",crab)) + xlab("Time Elapsed (Hours)") + ylab("Area (km^2)")
-  print(g)
-}
-#dev.off()
 
 
-#write.csv(kernel50Area,"7.17kernel50area")
-#write.csv(kernel95Area,"7.17kernel95area")
 
-kernel50Area <- read.csv("7.17kernel50area")
-kernel95Area <- read.csv("7.17kernel95area")
-kernel50Area = kernel50Area[,which(colnames(kernel50Area)!="X")]
-kernel95Area = kernel95Area[,which(colnames(kernel95Area)!="X")]
-colnames(kernel50Area)[1:48] = substr(colnames(kernel50Area)[1:48],2,1000)
-colnames(kernel95Area)[1:48] = substr(colnames(kernel95Area)[1:48],2,1000)
-k50melt <- melt(kernel50Area,id=c("Island","CrabNum"))
-k95melt <- melt(kernel95Area,id=c("Island","CrabNum"))
-k50melt$variable = as.numeric(k50melt$variable)*6
-k95melt$variable = as.numeric(k95melt$variable)*6
-k50melt = subset(k50melt,value>0)
-k95melt = subset(k95melt,value>0)
-
-ggplot(k50melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 50% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (units needed)")
-ggplot(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 95% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (units needed)")
-
-
-ggplot(k50melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200),ylim=c(0,5))
-ggplot(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200),ylim=c(0,5))
 

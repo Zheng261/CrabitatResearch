@@ -1,6 +1,5 @@
 library(geosphere) 
 
-
 # Import smoothed classification image:
 classed <- raster("6.26MASKEDPalmyra-RF-classification-v3-5x5-modal.tif") # Took 5x5 MODAL average
 
