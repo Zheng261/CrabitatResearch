@@ -1,8 +1,8 @@
 install.packages("curl")
-library(curl)
 install.packages("xml2")
 library(xml2)
-
+library(curl)
+library(httr)
 cleanFun <- function(htmlString) {
   return(gsub("&gt;",">",gsub("&lt;","<",gsub("<.*?>", "", htmlString))))
 }
@@ -75,7 +75,7 @@ SOS <- function(thisQuery,nAnswers=5,r = TRUE) {
   cat(paste0(cleanFun(trimmedAnswer),"\n"))
 }
 
-############################
+############################ Testing Code ############################ 
 answerPage <- GET("https://stackoverflow.com/questions/11134812/how-to-find-the-length-of-a-string-in-r")
 answerPage <- content(answerPage, "parse", type="text/html",encoding = "ISO-8859-1")
 firstQuestionIndex <- regexpr("postcell post-layout",answerPage)

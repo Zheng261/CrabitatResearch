@@ -11,7 +11,10 @@ install.packages("rgdal")        #more image manipulation functions
 install.packages("caret")        #TBH don't remember what this does
 install.packages("e1071")        #TBH don't remember what this does
 install.packages("hrbrthemes")
-
+install.packages("rgeos")
+install.packages("lemon")
+install.packages("knitr")
+install.packages("prettymapr")
 #Set this to whatever you like--I have it so D:/ always points to my portable hard drive with all the data on it
 setwd("/volumes/Seagate 4tb/Palmyra Remote Sensing")
 library("randomForest")
@@ -19,7 +22,9 @@ library("raster")
 library("rgdal")
 library("caret")
 library("e1071")
+library(stringr)
 library(maptools)
+library(rgeos)
 library(plyr)
 library(dplyr)
 library(ggplot2)
@@ -30,6 +35,9 @@ library(reshape)
 library(pracma)
 library(lme4)
 library("Hmisc")
+library(lemon)
+library(knitr)
+library(prettymapr)
 ############################################
 ###### IMPORT IMAGE AND TRAINING DATA ######
 ############################################
@@ -68,7 +76,7 @@ names(img) <- c(paste0("T",1:8, coll=""), paste0("B",1:8, coll="")) #renames ban
 
 
 # plot RGB rendering of the image just to check the layout of the image, forcing all pixel values >255 to equal 255. Note this is resource intensive:
-#plotRGB(img * (img <= 255), r=13, g=11, b=10) #This doesn't quite get the colors right but the data is there, at least
+#plotRGB(img, r=13, g=11, b=10) #This doesn't quite get the colors right but the data is there, at least
 
 
 ### The code is currently written to read in a "shapefile" of points, which basically has a bunch of entries (points) with X and Y coordinates,

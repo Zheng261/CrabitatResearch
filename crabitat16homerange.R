@@ -58,8 +58,8 @@ for (name in crabList) {
   crabs2016 = rbind(crabs2016,temp[,importantValues]);
 }
 
-kudoffset = 100
-fiftyoffset = 50
+kudoffset = 1000
+fiftyoffset = 500
 
 #Begins calculating and plotting home range v. crab tracks 
 #pdf("CrabitatNoTraxHomeRangeIndividual.pdf")

@@ -30,15 +30,23 @@ summary(fit)
 ftable = drop1(fit, ~. ,test="Chisq")
 ftable
 
-fit2 <- lmer(value ~ variable + (1|Island) + (1|Year), data= kud95stats)
+
+fit1 <- lmer(value ~ variable + (1|Year), data= kud95stats, REML=FALSE)
+summary(fit1)
+ftable = drop1(fit1, ~. ,test="Chisq")
+ftable
+fit2 <- lmer(value ~ variable + (1|Island) + (1|Year), data= kud95stats, REML=FALSE)
 summary(fit2)
 ftable = drop1(fit2, ~. ,test="Chisq")
 ftable
+anova(fit1,fit2)
 
-#anova(fit1,fit2)
 
 wilcox.test(subset(kud95stats,variable=="NativesWI")$value, subset(kud95stats,variable=="CocosWI")$value)
 t.test(subset(kud95stats,variable=="NativesWI")$value, subset(kud95stats,variable=="CocosWI")$value)
 
-
+var(subset(kud95stats,variable=="NativesWI")$value)
+var(subset(kud95stats,variable=="CocosWI")$value)
 var.test(subset(kud95stats,variable=="NativesWI")$value, subset(kud95stats,variable=="CocosWI")$value)
+
+
