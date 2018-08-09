@@ -36,7 +36,7 @@ edge_detection<- function(x,y,xcutoff=15,ycutoff=15) {
 
 
 ### PLOTS KUDs with experimental border control technology ####
-pdf("8.6CooperCrabKUDBorders.pdf",width=10,height=10)
+pdf("8.6CooperCrabKUDBorders.pdf",width=10,height=7)
 for (island in c("cooper","eastern","sand")) {
   imgtest <- raster(paste0(island,".tif"))
   image(imgtest, col="black",axes=FALSE)
@@ -56,14 +56,15 @@ for (island in c("cooper","eastern","sand")) {
   addnortharrow(pos = "topright", padin = c(0.15, 0.15), scale = 0.5,
                 lwd = 1, border = "black", cols = c("white", "black"),
                 text.col = "black")
-  legend(title=str_to_title(island),x="topleft",legend=unique(allCrabsInIsland$CrabNum),col= unlist(crabColorsList[unique(allCrabsInIsland$CrabNum)]),lty=1,cex=1)
+  legend(title=str_to_title(island),x="bottomleft",legend=unique(allCrabsInIsland$CrabNum),col= unlist(crabColorsList[unique(allCrabsInIsland$CrabNum)]),lty=1,cex=0.7)
 }
 dev.off()
   
   
   
-  #pdf("8.3CooperCrabRasterOverlapping.pdf",width=10,height=8)
-  imgtest <- raster(paste0(island,".tif"))
+#Makes KUD borders
+imgtest <- raster(paste0(island,".tif"))
+for (island in c("cooper","eastern","sand")) {
   image(imgtest, col="black",axes=FALSE)
   allCrabsInIsland = subset(k95meltRO,Island==island)
   #iter = 1
