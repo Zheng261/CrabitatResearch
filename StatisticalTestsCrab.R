@@ -2,6 +2,7 @@
 ############## NORMALIZED POINT SAMPLING APPROACH ####################
 ######################################################################
 
+
 fit <- lmer(value ~ variable + (1|Island), data= meltHourlyTrackDataDF)
 summary(fit)
 ftable = drop1(fit, ~. ,test="Chisq")
@@ -42,11 +43,10 @@ ftable
 anova(fit1,fit2)
 
 
-wilcox.test(subset(kud95stats,variable=="NativesWI")$value, subset(kud95stats,variable=="CocosWI")$value)
+round(unlist(wilcox.test(subset(kud95stats,variable=="NativesWI")$value, subset(kud95stats,variable=="CocosWI")$value)[3]),3)
 t.test(subset(kud95stats,variable=="NativesWI")$value, subset(kud95stats,variable=="CocosWI")$value)
 
-var(subset(kud95stats,variable=="NativesWI")$value)
-var(subset(kud95stats,variable=="CocosWI")$value)
+var(subset(kud95stats,variable=="CocosWI")$value)/var(subset(kud95stats,variable=="NativesWI")$value)
 var.test(subset(kud95stats,variable=="NativesWI")$value, subset(kud95stats,variable=="CocosWI")$value)
 
-
+?var.test

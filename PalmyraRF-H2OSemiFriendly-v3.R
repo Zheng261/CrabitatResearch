@@ -76,6 +76,7 @@ names(img) <- c(paste0("T",1:8, coll=""), paste0("B",1:8, coll="")) #renames ban
 
 
 # plot RGB rendering of the image just to check the layout of the image, forcing all pixel values >255 to equal 255. Note this is resource intensive:
+#names(img) <- c(paste0("T",1:8, coll=""), paste0("B",1:8, coll=""))
 #plotRGB(img, r=13, g=11, b=10) #This doesn't quite get the colors right but the data is there, at least
 
 
