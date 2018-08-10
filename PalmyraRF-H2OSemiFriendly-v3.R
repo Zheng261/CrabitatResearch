@@ -88,7 +88,7 @@ names(img) <- c(paste0("T",1:8, coll=""), paste0("B",1:8, coll="")) #renames ban
 #readOGR("palmyra-2016-truthing-points-v2.shp")
 #ogrInfo(dsn="palmyra-2016-truthing-points-v2.shp", layer="palmyra-2016-truthing-points-v2")
 #ogrListLayers("palmyra-2016-truthing-points-v2.shp")
-trainingData <- readOGR(dsn = "palmyra-2016-truthing-points-v2.shp", layer = "palmyra-2016-truthing-points-v2")
+trainingData <- readOGR(dsn = "/volumes/Seagate 4tb/Palmyra Remote Sensing/palmyra-2016-truthing-points-v2.shp", layer = "palmyra-2016-truthing-points-v2")
 #file.exists("palmyra-2016-truthing-points-v2.shp")
 #trainingData <- shapefile("palmyra-2016-truthing-points-v2.shp") #Whether we need to do this for every island, or train the algorithm on one island and run the Random Forest model on all the rest, remains to be seen...
 
@@ -104,7 +104,8 @@ for (i in 1:nrow(trainingData)){
     trainingData$land[i] = 1
   }
 }
-
+trainingData = spTransform(trainingData,"+proj=utm +zone=3 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+  
 # Assign raster values to training data points
 dataSet <- as.data.frame(extract(img, trainingData))
 trainingData@data = data.frame(trainingData@data, dataSet[match(rownames(trainingData@data), rownames(dataSet)),])
@@ -131,8 +132,10 @@ landvwater = predict(img, rf.mdl.mask, filename="6.26-Palmyra-RF-mask-v1.img", t
 # to code it.
 
 #This kind of takes forever and idk why
-landOnly = mask(img,landvwater,filename="6.27-Palmyra-ALL-BANDS-MASKED-v2.tif",maskvalue=0,updatevalue=NA,overwrite=TRUE)
+landOnly = raster::mask(img,landvwater,filename="8.8-Palmyra-ALL-BANDS-MASKED-v2.tif",maskvalue=0,updatevalue=NA,overwrite=TRUE)
 names(landOnly) <- c(paste0("T",1:8, coll=""), paste0("B",1:8, coll="")) #renames bands to shortened designations
+
+plot(landvwater)
 
 ############################
 ###### CLASSIFICATION ######
@@ -193,6 +196,8 @@ writeRaster(img.f, filename = "6.27MASKEDPalmyra-RF-classification-v3-5x5-modal.
 ############################
 ###### ACCURACY TESTS ######
 ############################
+# Import smoothed classification image:
+classed <- raster("6.26MASKEDPalmyra-RF-classification-v3-5x5-modal.tif") # Took 5x5 MODAL average
 
 # Read in validation points shapefile; get rid of extra coordinate columns as with above
 valData <- readOGR(dsn = "palmyra-2016-validation-points-v2.shp", layer = "palmyra-2016-validation-points-v2")
@@ -200,9 +205,6 @@ ogrInfo(dsn = "palmyra-2016-validation-points-v2.shp",layer="palmyra-2016-valida
 #valData <- shapefile("palmyra-2016-validation-points-v2.shp")
 valData <- subset(valData, select = landcover)
 View(valData)
-
-# Import smoothed classification image:
-classed <- raster("6.26MASKEDPalmyra-RF-classification-v3-5x5-modal.tif") # Took 5x5 MODAL average
 
 # Assign classification values to corresponding validation pixels
 valData$classified <- as.data.frame(extract(classed, valData))
@@ -246,7 +248,6 @@ write.table(valData$classified, "clipboard-2048", sep=",", row.names=FALSE)
 
 #validateTable <- merge(pred, truth, all=TRUE)
 #confusionMatrix(validateTable)
-
 # OOB calculation
 nvariables = 4
 conf <- rf.mdl$confusion

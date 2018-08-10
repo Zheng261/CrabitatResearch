@@ -11,19 +11,15 @@ testimg <- brick("RawakiSkySat.tif")
 names(testimg) <- c("Blue","Green","Red","IR")
 testimg <- subset(testimg, order(c(3,2,1,4)))
 
-#plotRGB(testimg , r=1, g=2, b=3, stretch="lin") #This doesn't quite get the colors right but the data is there, at least
+plotRGB(testimg , r=1, g=2, b=3, stretch="lin") #This doesn't quite get the colors right but the data is there, at least
 #dev.off()
 
 testimgbw <- ( testimg$Red + testimg$Green + testimg$Blue ) / 3
 #testimg <- addLayer(testimg, gray_raster)
 #names(testimg)[which(names(testimg)=="layer")] = "Grayscale"
-
 #plot(gray_raster,col = gray.colors(10, start = 0.3, end = 0.9, gamma = 2.2, alpha = NULL))
 glcmtestimg <- glcm(testimgbw,window=c(3,3))
 testimg<-addLayer(testimg,glcmtestimg)
-
-
-
 
 trainingData <- readOGR(dsn = "RawakiIsWaterFilled.shp", layer = "RawakiIsWaterFilled")
 #trainingData = spTransform(trainingData,"+proj=utm +zone=2 +south +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
@@ -57,7 +53,6 @@ landvwater = predict(testimg, rf.mdl.mask, filename="8.8-MaskForRawakiSkySat.tif
 # NOTE: from here, I took my classified image (which had values of 0 for water and 1 for land) and used it to "mask" my original image,
 # turning all pixels that are classified as 0 into "NA" pixels. I did this in ENVI but it's definitely possible in R if you take the time
 # to code it.
-
 plot(landvwater) 
 
 #This kind of takes forever and idk why
@@ -66,15 +61,12 @@ names(landOnly) <- names(testimg)
 plotRGB(landOnly, r=1, g=2, b=3, stretch="lin")
 dev.off()
 
-
-
 testing <- readOGR(dsn = "RawatiIsWater.shp", layer = "RawatiIsWater")
 testing@data
 testing@data = data.frame(testing@data, dataSet[match(rownames(testing@data), rownames(dataSet)),])
 colnames(testing@data)[which(colnames(testing@data)=="id")] = "isWater"
 testing@data = testing@data[which(!is.na(testing@data$isWater)),]
 testingAcc = as.data.frame(extract(landvwater, testing))
-(is.na(landvwater))
 
 
 plot(rf.mdl.mask , main="Out-of-bag errors for 16-feature RF model")#, xlab="Number of trees grown", ylab="OOB error")
