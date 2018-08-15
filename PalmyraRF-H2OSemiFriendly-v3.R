@@ -15,6 +15,7 @@ install.packages("rgeos")
 install.packages("lemon")
 install.packages("knitr")
 install.packages("prettymapr")
+install.packages("RStoolbox")
 #Set this to whatever you like--I have it so D:/ always points to my portable hard drive with all the data on it
 setwd("/volumes/Seagate 4tb/Palmyra Remote Sensing")
 library("randomForest")
@@ -290,6 +291,5 @@ for (i in 1:nrow(testconf)) {
 View(testconf)
 mean(testconf$Accuracy)
 mean(testconf$Precision)
-
 
 

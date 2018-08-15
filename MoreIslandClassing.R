@@ -69,7 +69,7 @@ testing@data = testing@data[which(!is.na(testing@data$isWater)),]
 testingAcc = as.data.frame(extract(landvwater, testing))
 
 
-plot(rf.mdl.mask , main="Out-of-bag errors for 16-feature RF model")#, xlab="Number of trees grown", ylab="OOB error")
+plot(rf.mdl.mask, main="Out-of-bag errors for 16-feature RF model")#, xlab="Number of trees grown", ylab="OOB error")
 
 # Here I like to average together the MDA and MDG accuracy scores and use that ranking as my new basis for feature selection
 var.score <- data.frame(importance(rf.mdl)[,5],importance(rf.mdl)[,6]) # make new dataframe to combine mda and mdg scores

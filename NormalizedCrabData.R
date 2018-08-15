@@ -516,8 +516,8 @@ kudmedwiframe$Year = HourlyMedianDF[which(!duplicated(HourlyMedianDF$CrabNum)),]
 #########################################
 
 ## ONLY DOING 95 BECAUSE THIS PROCESS IS HELLA SLOW
-kernel95Area <- read.csv("7.29kernel95area")
-#kernel50Area <- read.csv("7.25kernel50area")
+kernel95Area <- read.csv("7.29kernel95area.csv")
+#kernel50Area <- read.csv("7.25kernel50area.csv")
 #kernel50Area = kernel50Area[,which(colnames(kernel50Area)!="X")]
 kernel95Area = kernel95Area[,which(colnames(kernel95Area)!="X")]
 #colnames(kernel50Area)[1:48] = substr(colnames(kernel50Area)[1:48],2,1000)
