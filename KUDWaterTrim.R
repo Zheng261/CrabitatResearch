@@ -200,7 +200,6 @@ for (crab in kudmedframe$CrabNum[crabsToDo]) {
 #write.csv(kernel95Area,"7.29kernel95area")
 #write.csv(kernel50Area,"7.25kernel50area")
 
-
 #kernel50Area <- read.csv("7.25kernel50area")
 #kernel95Area <- read.csv("7.29kernel95area")
 
@@ -215,13 +214,26 @@ k95melt$variable = as.numeric(k95melt$variable)*6
 k50melt = subset(k50melt,value>0)
 k95melt = subset(k95melt,value>0)
 
-ggimage(k50melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 50% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (km?)")
-ggimage(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 95% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (km?)")
-ggimage(k50melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200),ylim=c(0,1))
-ggimage(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200),ylim=c(0,1))
+ggplot(k50melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 50% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (km?)")
+ggplot(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200)) + ggtitle("Area of 95% KUD over time, by crab") + xlab("Time Elapsed") + ylab("Area (km?)")
+ggplot(k50melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200),ylim=c(0,1))
+ggplot(k95melt,aes(x=variable,y=value,color=as.factor(CrabNum))) + geom_line() + coord_cartesian(xlim=c(0,200),ylim=c(0,1))
 
-
-
+crabFiftyMedRasterList = list()
+for (island in c("cooper","sand","eastern")) {
+  imgtest <- brick(paste0(island,".tif"))
+  image(imgtest, col="black",axes=FALSE)
+  allCrabsInIsland = subset(HourlyMedianDF,Island==island)
+  for (crabNum in unique(allCrabsInIsland$CrabNum)) {
+    print(crabNum)
+    ### KUD 50 ### 
+    maskedver = raster::mask(imgtest,crabHRList[[crabNum+kudoffset+fiftyoffset]])
+    maskedvertransformed = projectRaster(maskedver,crs=CRS('+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0'))
+    image(maskedvertransformed,col="yellow",add=TRUE,legend=FALSE)
+    crabFiftyMedRasterList[[crabNum+kudoffset+fiftyoffset]] = maskedvertransformed
+  }
+}
+#saveRDS(crabFiftyMedRasterList,"8.16FIFTYKUDRASTERS.RDS")
 
 #### KUD 50, currently not doing
 ver50 <- getverticeshr(kud, 50)

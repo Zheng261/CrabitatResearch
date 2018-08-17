@@ -2,7 +2,8 @@ crabs201X <- read.csv("crabs201XAllNP.csv")
 crabs201X$Island = as.character(crabs201X$Island)
 
 crabColorsList <- readRDS("8.2crabColorsByIsland.RDS")
-crabMedRasterList <- readRDS("8.2crabWaterTrimmedHRCoreArea.RDS")
+crabMedRasterList <- readRDS("8.3KUDALLFULLRASTERS.RDS")
+crabHRList <-readRDS("7.27crabHRdata.rds")
 
 classed <- raster("6.26MASKEDPalmyra-RF-classification-v3-5x5-modal.tif") # Took 5x5 MODAL average
 #Begins analyzing island habitat distribution
@@ -37,6 +38,7 @@ for (isle in islands) {
   allLocations[isle,"Scaevola"] = totalavailhab[3]/sum(totalavailhab)
   allLocations[isle,"Sand"] = totalavailhab[4]/sum(totalavailhab)
 }
+#saveRDS(allLocations,"palmyraHabDist.rdat")
 
 #############################
 ##### NORMALIZED POINTS #####
