@@ -288,37 +288,44 @@ kudoffset = 1000
 #Generates a list to add different HR estimates to
 crabHRList = list()
 
-#Distribution of island crabs
-#table(HourlyMedianDF[which(!duplicated(HourlyMedianDF$CrabNum)),"Island"])
+#For each crab, calculate, plot, and save its 95% and 50% KUD home ranges.
+#HourlyMedianDF is a data frame containing every track of every crab, median-filtered. 
 for (crab in unique(HourlyMedianDF$CrabNum)) {
   print(crab)
-  #Converts to spatial points
+  #Converts the data frame of crab tracks for this one crab into a spatial data frame. 
   thisCrabTrax = HourlyMedianDF[which(HourlyMedianDF$CrabNum == crab),];
   thisCrabTrax.sp = SpatialPoints(coords = thisCrabTrax[,c("Longitude","Latitude")], proj4string = CRS('+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0')) # convert to SpatialPoints object
+  
+  #Transform the coordinates from longlat to utm, since the rasters are in utm and it takes longer to convert a raster than a set of tracks
   thisCrabTrax.spt <- spTransform(thisCrabTrax.sp,CRS("+proj=utm +zone=3 +ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"))
   
+  #Constructs the grid to be used for crab tracks - adds 300*1*0.5=150 meters of area on each side of the track extent.
+  #The reason for doing this is because the kernel fitted to the crab tracks can sometimes exceed the extent of the tracks themselves,
+  #if the tracks are particularly deviant from a bivariate normal distribution
   resolution = 1
   x <- seq(extent(thisCrabTrax.spt)[1]-300, extent(thisCrabTrax.spt)[2]+300,by=resolution) # where resolution is the pixel size you desire 
   y <- seq(extent(thisCrabTrax.spt)[3]-300, extent(thisCrabTrax.spt)[4]+300,by=resolution)
+  #Constructs the grid with x and y vectors that we pass in and assigns grid coordinates 
   xy <- expand.grid(x=x,y=y)
   coordinates(xy) <- ~x+y
   gridded(xy) <- TRUE
   
-  #Constructs kernel utilization density of crab tracks
-  kud <- kernelUD(thisCrabTrax.spt, grid=xy, h="href") # NOTE: look into changing grid value. Currently I think it's too big because the estimated homerange (plotted below) looks too big. Either grid or h needs tweaking.
-  kernel.area(kud)
+  #Constructs kernel utilization density of crab tracks with our grid and href as the smoothing parameter
+  kud <- kernelUD(thisCrabTrax.spt, grid=xy, h="href")
   
-  #Plots island
+  #Plots the island that the crab is on
   island = thisCrabTrax[1,"Island"]
   imgtest <- brick(paste0(island,".tif"))
-  
-  #Plots kud over island and crab tracks
   plotRGB(imgtest, r=1, g=2, b=3,stretch="lin")
+  
+  #Plots 95 and 50 KUD over both island and tracks
   ver <- getverticeshr(kud, 95)
   plot(ver, add=TRUE, col=rainbow(4)[1])
+  #Adds 95 KUD to list
   crabHRList[crab+kudoffset] = ver
   ver2 <- getverticeshr(kud, 50)
   plot(ver2, add=TRUE, col=rainbow(4)[2])
+  #Adds 50 KUD to list
   crabHRList[crab+fiftyoffset+kudoffset] = ver2
   legend(legend=c("KUD95", "KUD50"),title=paste("Crab:",crab),x="bottomright",
          col=c(rainbow(4)[1], rainbow(4)[2]), lty=1, cex=1)

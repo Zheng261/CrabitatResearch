@@ -1,5 +1,8 @@
+crabs201X <- read.csv("crabs201XAllNP.csv")
+crabs201X$Island = as.character(crabs201X$Island)
 taggedMetaData16 <- read.csv("../Palmyra Crab Research/Crab tagging/tagged coconut crab metadata 2016.csv")
 taggedMetaData17 <- read.csv("../Palmyra Crab Research/Crab tagging/tagged coconut crab metadata 2017.csv")
+DFAreas <- read.csv("7.27KUDAreas.csv")
 
 taggedMetaData16 = taggedMetaData16[,which(colnames(taggedMetaData16)%in%c("Animal..","Sex","Island","Carapace.width..cm.","Thoracic.length..cm.","Body.mass..kg."))]
 colnames(taggedMetaData16) <- c("Crab Number","Sex","Island","Carapace width (cm)","Thoracic length (cm)","Body Mass (kg)")
@@ -24,11 +27,18 @@ for (crab in unique(crabs201X$CrabNum)) {
   taggedMetaDataAll[which(taggedMetaDataAll$`Crab Number`==crab),c("Tracking Start","Tracking End")] = as.character(range(thisDateVec))
   taggedMetaDataAll[which(taggedMetaDataAll$`Crab Number`==crab),c("Total Days Tracked")] = as.numeric(thisDateVec[length(thisDateVec)] - thisDateVec[1])
 }
-#write.csv(taggedMetaDataAll, "8.8AllCrabMetaData.csv")
+#### One of the crabs had its entries split into two periods for some reason - we fix this manually
+taggedMetaDataAll[2,"Tracking End"] = taggedMetaDataAll[3,"Tracking End"]
+taggedMetaDataAll = taggedMetaDataAll[-3,]
+###  Adds home range and core area size for each crab
+taggedMetaDataAll$'Home Range Size (km²)' = DFAreas$KUD95Area
+taggedMetaDataAll$'Core Area Size (km²)' = DFAreas$KUD50Area
+
+write.csv(taggedMetaDataAll, "8.16AllCrabMetaData.csv")
 
 
 crabMetaDataCondensed <- data.frame(matrix(nrow=3,ncol=9))
-colnames(crabMetaDataCondensed) <- c("Total Crabs","# 2017","Sex Ratio (M:F)","Avg. Carapace Width (cm)","Avg. Body Mass (kg)","Median Days Tracked","Total GPS Hits","Median KUD95 Size (km)", "Median KUD50 Size (km)")
+colnames(crabMetaDataCondensed) <- c("Total Crabs","# 2017","Sex Ratio (M:F)","Avg. Carapace Width (cm)","Avg. Body Mass (kg)","Median Days Tracked","Total GPS Hits","Median KUD95 Size (km²)", "Median KUD50 Size (km²)")
 rownames(crabMetaDataCondensed) <- c("cooper","eastern","sand")
 for (island in c("cooper","eastern","sand")) {
   thisIslandTrax = subset(crabs201X,Island==island)
@@ -48,7 +58,7 @@ print.data.frame(crabMetaDataCondensed)
 #install.packages("stargazer")
 #library(stargazer)
 #stargazer(crabMetaDataCondensed,summary=FALSE)
-write.csv(crabMetaDataCondensed,"7.30crabmetadatacondensed.csv")
+write.csv(crabMetaDataCondensed,"8.16crabmetadatacondensed.csv")
 
 
 

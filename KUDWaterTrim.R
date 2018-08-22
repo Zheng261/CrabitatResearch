@@ -1,6 +1,7 @@
 #########################################
 ###########Crab KUD trimming#############
 #########################################
+
 crabHRList <-readRDS("7.27crabHRdata.rds")
 DFAreas = data.frame(matrix(ncol=4,nrow=length(kudmedframe$CrabNum)))
 colnames(DFAreas) <- c("CrabNum","Island","KUD95Area","KUD50Area")

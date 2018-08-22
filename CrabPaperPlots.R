@@ -115,12 +115,17 @@ p
 
 
 #### Starts representative crab plots ####
-pdf("8.20SandEasternRepresentativeCrabPlots.pdf",height=10,width=10)
 goodCrabList = list()
 goodCrabList[["cooper"]] = c(10,119,131)
-goodCrabList[["sand"]] = c(3,107,121)
-goodCrabList[["eastern"]] = c(13,122,128)
-for (island in c("sand","eastern")) {
+goodCrabList[["sand"]] = c(117,120,115)
+goodCrabList[["eastern"]] = c(15,126,128)
+for (island in c("cooper","sand","eastern")) {
+  if (island=="cooper") {
+    pdf("8.17CooperRepresentativeCrabPlots.pdf",height=8,width=10)
+  } else if (island=="sand") {
+    dev.off()
+    pdf("8.17SandEasternRepresentativeCrabPlots.pdf",height=10,width=10)
+  }
   imgtest <- brick(paste0(island,".tif"))
   image(imgtest, col="black",axes=FALSE,main="",xlab="",ylab="")
   allCrabsInIsland = subset(HourlyMedianDF,CrabNum%in%goodCrabList[[island]])
@@ -147,12 +152,8 @@ for (island in c("sand","eastern")) {
     plot(testUTMSL,col=colors,pch=15,cex=0.3,lend=15,ljoin=4,lwd=2,lty=1,add=TRUE)
   }
   legendDates = paste("Day",c(1:length(colors)))
+  legend(title=str_to_title(paste(island,"Island")),x="bottomright",legend=legendDates,col=colors,lty=1,cex=0.75)
   
-  if (island=="cooper") {
-    legend(title=str_to_title(paste(island,"Island")),x="bottomleft",legend=legendDates,col=colors,lty=1,cex=0.75)
-  } else {
-    legend(title=str_to_title(paste(island,"Island")),x="bottomright",legend=legendDates,col=colors,lty=1,cex=0.75)
-  }
   prettymapr::addscalebar(plotunit = NULL, plotepsg = "32603", widthhint = 0.25,
                           unitcategory = "metric", htin = 0.1, padin = c(0.15, 0.15),
                           style = "bar", bar.cols = c("black", "white"), lwd = 1,
@@ -190,11 +191,7 @@ for (island in c("sand","eastern")) {
   addnortharrow(pos = "topleft", padin = c(0.15, 0.15), scale = 0.5,
                 lwd = 0.5, border = "black", cols = c("white", "black"),
                 text.col = "black")
-  if (island=="cooper") {
-    legend(title=paste("Island:",str_to_title(island)),x="bottomleft",legend=c("KUD95","KUD50"),fill=c("red","yellow"),lty=1,cex=0.75)
-  } else {
-    legend(title=paste("Island:",str_to_title(island)),x="bottomleft",legend=c("KUD95","KUD50"),fill=c("red","yellow"),lty=1,cex=0.75)
-  }
+  legend(title=paste("Island:",str_to_title(island)),x="bottomright",legend=c("KUD95","KUD50"),fill=c("red","yellow"),lty=1,cex=0.75)
 }
 dev.off()
 
