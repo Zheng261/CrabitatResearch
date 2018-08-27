@@ -202,13 +202,13 @@ classed <- raster("6.26MASKEDPalmyra-RF-classification-v3-5x5-modal.tif") # Took
 
 # Read in validation points shapefile; get rid of extra coordinate columns as with above
 valData <- readOGR(dsn = "palmyra-2016-validation-points-v2.shp", layer = "palmyra-2016-validation-points-v2")
-ogrInfo(dsn = "palmyra-2016-validation-points-v2.shp",layer="palmyra-2016-validation-points-v2")
+#ogrInfo(dsn = "palmyra-2016-validation-points-v2.shp",layer="palmyra-2016-validation-points-v2")
 #valData <- shapefile("palmyra-2016-validation-points-v2.shp")
 valData <- subset(valData, select = landcover)
 View(valData)
 
 # Assign classification values to corresponding validation pixels
-valData$classified <- as.data.frame(extract(classed, valData))
+valData$classified <- as.data.frame(extract(palmyra, valData))
 pred <- list("0")
 truth<- list("0")
 
