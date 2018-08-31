@@ -1,4 +1,5 @@
 ####Multi-island water model####
+### Only run the first part if we want to make palmyra, teraina, fanning tifs from scratch
 setwd("/volumes/Seagate 4tb/Pacific-islands-planet-imagery")
 library(glcm)
 library(imager)
@@ -18,29 +19,6 @@ names(fanning) <- glcmnames[c(1:4,26:32)]
 names(teraina) <- glcmnames[c(1:4,26:32)]
 names(palmyra) <- glcmnames[c(1:4,26:32)]
 
-
-## FILTERS OUT HIGH VALUES, we temporarily do not do this ##
-#for(color in colnames(colorNormFrame)) {
-  #print(color)
-  #mean = cellStats(palmyra[[color]],"mean")
-  #sd = cellStats(palmyra[[color]],"sd")
-  #All points 2 SD above mean are marked as true, or 1
-  #highFilter = (palmyra[[color]]-mean) > 3*sd
-  #setValues(palmyra,value=NA,index= which(highFilter[,] == 1))
-  
-  #mean = cellStats(teraina[[color]],"mean")
-  #sd = cellStats(teraina[[color]],"sd")
-  #All points 2 SD above mean are marked as true, or 1
-  #highFilter = (teraina[[color]]-mean) > 3*sd
-  #setValues(teraina,value=NA,index= which(highFilter[,] == 1))
-  
-  #mean = cellStats(fanning[[color]],"mean")
-  #sd = cellStats(fanning[[color]],"sd")
-  #All points 2 SD above mean are marked as true, or 1
-  #highFilter = (fanning[[color]]-mean) > 3*sd
-  #setValues(fanning,value=NA,index= which(highFilter[,] == 1))
-#}
-
 for(color in colnames(colorNormFrame)) {
   print(color)
   print("Palmyra")
@@ -55,8 +33,6 @@ for(color in colnames(colorNormFrame)) {
 }
 write.csv(colorNormFrame,"8-28-18PalmTerainaFanningColorsStatistics.csv")
 
-
-plotRGB(fanning,r=1,g=2,b=3)
 for(color in colnames(colorNormFrame)) {
   print(color)
   
@@ -64,8 +40,8 @@ for(color in colnames(colorNormFrame)) {
   palmyra[[color]] = palmyra[[color]] * (colorNormFrame["STDevPalmyra",color]/mean(colorNormFrame[c("STDevPalmyra","STDevTeraina","STDevFanning"),color]))
   #Shifts down every value by the average mean of the islands
   palmyra[[color]] = palmyra[[color]] - (colorNormFrame["MeanPalmyra",color] - mean(colorNormFrame[c("MeanPalmyra","MeanTeraina","MeanFanning"),color]))
- 
-   #does the same for the others too
+  
+  #does the same for the others too
   #Multiplies every value by the difference in standard deviation
   teraina[[color]] = teraina[[color]] * (colorNormFrame["STDevTeraina",color]/mean(colorNormFrame[c("STDevPalmyra","STDevTeraina","STDevFanning"),color]))
   #Shifts down every value by the average mean of the islands
@@ -77,45 +53,48 @@ for(color in colnames(colorNormFrame)) {
   fanning[[color]] = fanning[[color]] - (colorNormFrame["MeanFanning",color] - mean(colorNormFrame[c("MeanPalmyra","MeanTeraina","MeanFanning"),color]))
 }
 
-writeRaster(palmyra,"8-29-11x11NORMwateryPalmyra.tif")
-writeRaster(teraina,"8-29-11x11NORMwateryTeraina.tif")
-writeRaster(fanning,"8-29-11x11NORMwateryFanning.tif")
+writeRaster(palmyra,"8-29-11x11NORMwateryPalmyra.tif",overwrite=TRUE)
+writeRaster(teraina,"8-29-11x11NORMwateryTeraina.tif",overwrite=TRUE)
+writeRaster(fanning,"8-29-11x11NORMwateryFanning.tif",overwrite=TRUE)
 
+
+
+
+#### Begin Classing ####
+palmyra < raster("8-29-11x11NORMwateryPalmyra.tif")
+teraina <- raster("8-29-11x11NORMwateryTeraina.tif")
+fanning <- raster("8-29-11x11NORMwateryFanning.tif")
+colorNormFrame <- read.csv("8-28-18PalmTerainaFanningColorsStatistics.csv")
 
 ### FANNING ####
-fanningTrainingDataOrig <- readOGR(dsn = "FanningTraining.shp", layer = "FanningTraining")
+fanningTrainingDataOrig <- readOGR(dsn = "FanningClouds.shp", layer = "FanningClouds")
 proj4string(fanningTrainingDataOrig) <- CRS("+proj=utm +zone=4 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 fanningTrainingData = fanningTrainingDataOrig
 #You get a warning here for some NA points. I'm not sure why this happens but I just remove them and then it works fine. Perhaps one of the points
 #was accidentally classified as water and removed.
 dataSet <- as.data.frame(raster::extract(fanning, fanningTrainingData))
-fanningTrainingData@data = cbind(fanningTrainingData@data,fanningTrainingData@data[,c("id")]==4)
-colnames(fanningTrainingData@data) <- c("Class","isWater")
+colnames(fanningTrainingData@data) <- c("Class")
 fanningTrainingData@data = data.frame(fanningTrainingData@data, dataSet[match(rownames(fanningTrainingData@data), rownames(dataSet)),])
 
 ### TERAINA ####
-terainaTrainingDataOrig <- readOGR(dsn = "TerainaTrainingScav.shp", layer = "TerainaTrainingScav")
+terainaTrainingDataOrig <- readOGR(dsn = "TerainaClouds.shp", layer = "TerainaClouds")
 #This shapefile for some reason was saved with the wrong CRS refernece - QGIS didn't convert any points before setting the CRS. 
 proj4string(terainaTrainingDataOrig) <- CRS("+proj=utm +zone=4 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 #You get a warning here for some NA points. I'm not sure why this happens but I just remove them and then it works fine. Perhaps one of the points
 #was accidentally classified as water and removed.
 terainaTrainingData = terainaTrainingDataOrig
 dataSet <- as.data.frame(extract(teraina, terainaTrainingData))
-terainaTrainingData@data = cbind(terainaTrainingData@data,terainaTrainingData@data[,c("id")]==4)
-colnames(terainaTrainingData@data) <- c("Class","isWater")
+colnames(terainaTrainingData@data) <- c("Class")
 terainaTrainingData@data = data.frame(terainaTrainingData@data, dataSet[match(rownames(terainaTrainingData@data), rownames(dataSet)),])
 
 ### PALMYRA ####
-palmyraTrainingDataOrig  <- readOGR(dsn = "/volumes/Seagate 4tb/Palmyra Remote Sensing/palmyra-2016-truthing-points-v2.shp", layer = "palmyra-2016-truthing-points-v2")
+palmyraTrainingDataOrig  <- readOGR(dsn = "PalmyraClouds.shp", layer = "PalmyraClouds")
 palmyraTrainingDataOrig = spTransform(palmyraTrainingDataOrig,"+proj=utm +zone=3 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
-palmyraTrainingData <- palmyraTrainingDataOrig[,-1] #removing some extra coordinate columns...
-palmyraTrainingData <- palmyraTrainingData[,-1]
-
+palmyraTrainingData <- palmyraTrainingDataOrig
 #You get a warning here for some NA points. I'm not sure why this happens but I just remove them and then it works fine. Perhaps one of the points
 #was accidentally classified as water and removed.
 dataSet <- as.data.frame(extract(palmyra, palmyraTrainingData))
-palmyraTrainingData@data = cbind(palmyraTrainingData@data,palmyraTrainingData@data[,c("landcover")]==4 | palmyraTrainingData@data[,c("landcover")]==3)
-colnames(palmyraTrainingData@data) <- c("Class","isWater")
+colnames(palmyraTrainingData@data) <- c("Class")
 palmyraTrainingData@data = data.frame(palmyraTrainingData@data, dataSet[match(rownames(palmyraTrainingData@data), rownames(dataSet)),])
 
 ## Removes NAs
@@ -126,9 +105,8 @@ allTrainingData = rbind(palmyraTrainingData@data,terainaTrainingData@data,fannin
 
 #### LEARNS GENERALIZABLE WATER MASK ####
 ### Classify based on bands: RGB, IR, IR GLCM
-rf.mdl.mask <- randomForest(x=allTrainingData[,c(6:13)], y=as.factor(allTrainingData[,"isWater"]), ntree=500, importance=TRUE, progress="window")
-saveRDS(rf.mdl.mask,"8.29WATERNORMrandomForestSMPalmTerrFann.RDS")
+rf.mdl.mask <- randomForest(x=allTrainingData[,c(2:12)], y=as.factor(allTrainingData[,"Class"]), ntree=500, importance=TRUE, progress="window")
+saveRDS(rf.mdl.mask,"8.29CLOUDSNORMrandomForestSMPalmTerrFann.RDS")
 
-palmyramask = predict(palmyra, rf.mdl.mask, filename="8.29-SMPalmyraWaterMask.tif", type="response", index=1, na.rm=TRUE, progress="window", overwrite=TRUE)
-plot(palmyramask)
-
+fanningmask = predict(fanning, rf.mdl.mask, filename="8.29-SMFanningMask.tif", type="response", index=1, na.rm=TRUE, progress="window", overwrite=TRUE)
+plot(fanningmask)

@@ -3,7 +3,7 @@ Comprehensive guide to all the crab and island remote sensing code
 	Zheng Yan & Tim White & Michael Burnett, August 2018
 ##################################################################
 
-Before doing anything, run the InitiateWkdirAndImportPackages.R file. This file sets up the working directory (currently this hard drive, but can be configured to be whateber) as well as loads all the required libraries, of which there are many.
+Before doing anything, run the InitiateWkdirAndImportPackages.R file. This file sets up the working directory (currently this hard drive, but can be configured to be whatever) as well as loads all the required libraries, of which there are many.
 
 The following describes the folders and their contents in "CrabitatResearch", listed in order of presentation in the upcoming paper.
 
@@ -38,7 +38,6 @@ D) CrabPaperPlots.R (Run through compiledcrabstats.R first!) allows visualizatio
 
 
 
-
 3) CrabStats
 
 A) StatisticalTestsCrab.R is the oldest attempt at crab statistics. It includes statistics comparing habitat utilization on both approaches I) and II), as described above. Parts may be useful for reference, but most likely should be generally ignored.
@@ -50,6 +49,7 @@ C) KUDHomeRangeSufficiency.R produces a CSV file of the areas of all water-maske
 D) CompiledCrabStats.R contains basically every statistical test that was done for the paper, including but not limited to: One sample wilcoxon tests for selection ratio, two sample wilcoxon tests for selection ratios, chi-sq for goodness of fit to determine effects of habitat type on selection ratio, ANOVA to determine differences in model selection, and F-test for differences in variance. All stats are stored in 8.8CrabsStatsList.RDS. This file also constructs the data frames with the stats information within for easy plotting in CrabPaperPlots.R
 
 
+
 4) Mike R Scripts
 
 A) AllCrabPlots.R plots information related to shelter data - crabs in shelter found in each habitat, in/out statistics, etc.
@@ -57,7 +57,6 @@ A) AllCrabPlots.R plots information related to shelter data - crabs in shelter f
 B) sandHabitatAnalysisv1 is a first-attempt at calculating selection ratio for the crabs on Sand island. 
 
 C) survey_barplots contains scripts for generating barplots for crabs found in each area during the day/night 30 minute 2016/17 surveys. 
-
 
 
 
@@ -74,6 +73,3 @@ D) PCApalmyra was my attempt at making GLCM better, since we condense down infor
 E) MoreIslandClassing is a test case attempting to classify Rawaki. I stopped working on this to work on Teraina instead at the time, but I plan to come back to this.
 
 F) SuperIslandModel and SuperWaterModel are both scripts used to train and produce a randomforest that utilizes all three training data islands to create a generalizable model. ChagosClassing.R is my first attempt at generalizing this model to another island not previously trained on before. It hasn't worked yet, but hopefully that changes in a few days as of August 29/2018. 
-
-
-

@@ -1,4 +1,4 @@
-C### Classification of Chagos ###
+### Classification of Chagos ###
 setwd("/volumes/Seagate 4tb/Pacific-islands-planet-imagery")
 library(glcm)
 library(imager)
@@ -41,28 +41,17 @@ writeRaster(Chagos,"8-26-11x11wateryChagos.tif")
 Chagos <- brick("8-26-11x11wateryChagos.tif")
 names(Chagos) <- glcmnames
 
-
 #### NORMALIZATION ####
 colorNormFrame <- read.csv("8-28-18PalmTerainaFanningColorsStatistics.csv")
 rownames(colorNormFrame) <- colorNormFrame$X
-for (color in c("Red","Green","Blue","IR")) {
-    print(color)
-  
-    mean = cellStats(Chagos[[color]],"mean")
-    sd = cellStats(Chagos[[color]],"sd")
-    
-    #All points 2 SD lower than mean are marked as true, or 1
-    #lowFilter = (Chagos[[color]]-mean) < -3*sd
-    #All points 2 SD above mean are marked as true, or 1
-    highFilter = (Chagos[[color]]-mean) > 3*sd
-    Chagos[[color]][which(highFilter[,] == 1)] = NA
-    
+#for (color in c("Red","Green","Blue","IR")) {
+#    print(color)
     #Multiplies every value by the ratio in standard deviation
-    Chagos[[color]] = Chagos[[color]] * (cellStats(Chagos[[color]],"sd")/mean(colorNormFrame[c("STDevPalmyra","STDevTeraina","STDevFanning"),color]))
+#    Chagos[[color]] = Chagos[[color]] * (cellStats(Chagos[[color]],"sd")/mean(colorNormFrame[c("STDevPalmyra","STDevTeraina","STDevFanning"),color]))
    
     #Shifts down every value by the average mean of the islands
-    Chagos[[color]] = Chagos[[color]] - (cellStats(Chagos[[color]],"mean") - mean(colorNormFrame[c("MeanPalmyra","MeanTeraina","MeanFanning"),color]))
-}
+#    Chagos[[color]] = Chagos[[color]] - (cellStats(Chagos[[color]],"mean") - mean(colorNormFrame[c("MeanPalmyra","MeanTeraina","MeanFanning"),color]))
+#}
 
 rf.mdl.mask <- readRDS("8.28WATERNORMrandomForestSMPalmTerrFann.RDS")
 plotRGB(Chagos,r=1,b=2,g=3)
@@ -72,4 +61,4 @@ quartz()
 crappyLandOnly = raster::mask(Chagos,chagosMask,filename="8.28-SMChagosMasked.tif",maskvalue=2,updatevalue=NA,overwrite=TRUE)
 names(crappyLandOnly) <- names(Chagos)
 plotRGB(crappyLandOnly,r=1,b=2,g=3,stretch="hist")
-#subset(crappyLandOnly,1)
+
