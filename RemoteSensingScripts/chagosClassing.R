@@ -62,3 +62,4 @@ crappyLandOnly = raster::mask(Chagos,chagosMask,filename="8.28-SMChagosMasked.ti
 names(crappyLandOnly) <- names(Chagos)
 plotRGB(crappyLandOnly,r=1,b=2,g=3,stretch="hist")
 
+

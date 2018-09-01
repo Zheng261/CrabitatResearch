@@ -8,6 +8,18 @@ Before doing anything, run the InitiateWkdirAndImportPackages.R file. This file 
 The following describes the folders and their contents in "CrabitatResearch", listed in order of presentation in the upcoming paper.
 
 
+
+0) FastTrack 
+This folder contains a variety of RDS files and CSV files in order to faithfully reproduce all of the figures we have so far in the paper while having to run as little code as possible. 
+
+IF YOU JUST NEED TO SLIGHTLY ADJUST A FIGURE:
+	- Run the InitiateWkdirAndImportPackages.R
+	- Change work directory to CrabitatResearch/FastTrack, or wherever the GitHub repository has been cloned to
+	- Run compiledcrabstats up to the point as marked
+	- Run crabpaperplots up to figure 1
+	- Find the figure in the file (listed in order) and run it. Adjust as needed
+
+
 1) CrabTracking
 
 This folder contains all code relevant to cleaning and analyzing the crab telemetry shapefiles obtained by Michael and Tim in 2016/2017.
@@ -36,6 +48,7 @@ C) KUDWaterTrim.R contains scripts for both water-trimming and edge-detecting th
 
 D) CrabPaperPlots.R (Run through compiledcrabstats.R first!) allows visualization of all important crab statistics (selection ratios, habitat utilization numbers, etc.), the asymptote KUD plot with linear regression, and the most up-to-date representative crab tracks.
 
+E) CrabGifCode.R - Creates a fun gif of crab tracks over time.
 
 
 3) CrabStats
@@ -48,7 +61,7 @@ C) KUDHomeRangeSufficiency.R produces a CSV file of the areas of all water-maske
 
 D) CompiledCrabStats.R contains basically every statistical test that was done for the paper, including but not limited to: One sample wilcoxon tests for selection ratio, two sample wilcoxon tests for selection ratios, chi-sq for goodness of fit to determine effects of habitat type on selection ratio, ANOVA to determine differences in model selection, and F-test for differences in variance. All stats are stored in 8.8CrabsStatsList.RDS. This file also constructs the data frames with the stats information within for easy plotting in CrabPaperPlots.R
 
-
+E) CrabMetaDataTable.R analyzes the survey metadata taken from the 16-17 metadata file from the Crab Tracking folder, combines the metadata with crab tracking statistics (days at liberty, KUD areas - home range/core area, etc) , and exports it into a CSV file. Contains both condensed and non-condensed data. 
 
 4) Mike R Scripts
 
@@ -72,4 +85,9 @@ D) PCApalmyra was my attempt at making GLCM better, since we condense down infor
 
 E) MoreIslandClassing is a test case attempting to classify Rawaki. I stopped working on this to work on Teraina instead at the time, but I plan to come back to this.
 
-F) SuperIslandModel and SuperWaterModel are both scripts used to train and produce a randomforest that utilizes all three training data islands to create a generalizable model. ChagosClassing.R is my first attempt at generalizing this model to another island not previously trained on before. It hasn't worked yet, but hopefully that changes in a few days as of August 29/2018. 
+F) SuperIslandModel and SuperWaterModel are both scripts used to train and produce a randomforest that utilizes all three training data islands to create a generalizable model. ChagosClassing.R is my first attempt at generalizing this model to another island not previously trained on before. It hasn't worked yet, but hopefully that changes in a few days as of August 29/2018. Update: I'm giving up on this for now and trying a different island.
+
+G) SuperCloudModel is a cloud mask trained by ~600 data points spread across all islands to mask out all clouds. It does not work very well, so we'll just try leaving the clouds in and moving on to a different island that doesn't have many clouds. 
+
+H) PukauraClassing uses both the SuperIslandModel and SuperWaterModel to watermask and classify the island of Pukarua. 
+

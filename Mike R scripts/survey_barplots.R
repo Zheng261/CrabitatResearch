@@ -104,6 +104,7 @@ head(summed)
 # Barplot of crabs/survey by general habitat type, subdivided by day/night:
 # Here error bars represent standard error of the mean
 #pdf("8.6CrabFoundPlot.pdf",width=10,height=7)
+saveRDS(summed, "8.30CrabHabitatFound.RDS")
 ggplot(summed, aes(x=General.habitat.type, y=Crab.found, fill=General.habitat.type)) + 
   geom_bar(position=position_dodge(), stat="identity") +
   theme_bw() +   # removes grey background. Keep this line towards the beginning to keep this look as the parent theme

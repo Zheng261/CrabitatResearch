@@ -5,12 +5,17 @@
 
 ###############  Starts importing Data   ##################
 
+### Start here if we want to start plotting figures
+### Essential files for crab statistics and plotting. All of these are on github 
+### - just add the directory Zheng261/CrabitatResearch/FastTrack
+
 ## Imports median-filtered crab tracks, removes CSV columns and paradise crab
 HourlyMedianDF = read.csv("7.25hourlymediandf.csv")
 HourlyMedianDF = HourlyMedianDF[,which(colnames(HourlyMedianDF)!='X')]
 HourlyMedianDF = subset(HourlyMedianDF,Island!="paradise")
 
-## Reads in MCP and KUD areas, removes CSV columns and paradise crab
+## Reads in MCP and KUD statistics, removes CSV columns and paradise crab
+## MCP isn't used, but it doesn't take any extra time to run and we might run into it later if a reviewer asks.
 mcpmedframe <- read.csv("7.25normMCPFrame.csv")
 kudmedframe <- read.csv("7.25normKUDFrame.csv")
 mcpmedframe = subset(mcpmedframe,Island!="paradise")
@@ -65,6 +70,7 @@ for (crab in 1:nrow(mcpmedwiframe)) {
   kudmedwiframe[crab,"50SandWI"] = kud1650ratios$wi[4]
 }
 
+### Function that calculates mean and SD for each habitat type
 data_summary <- function(data, varname, groupnames){
   require(plyr)
   summary_func <- function(x, col){
@@ -102,11 +108,13 @@ colnames(meltkudallwiframe)[5] = 'SelectionRatio'
 colnames(meltkudallwiframe)[4] = "HabitatType"
 dfkudall <- data_summary(meltkudallwiframe,varname="SelectionRatio",groupnames=c("type","HabitatType"))
 
+### Combines MCP and KUD information for plotting
 dfall = rbind(dfmcpall,dfkudall)
 meltall = rbind(meltmcpallwiframe,meltkudallwiframe)
 dfall$HabitatType = revalue(dfall$HabitatType,c("NativesWI" = "Natives", "SandWI"="Unveg.","ScaevolaWI"="Scaevola","CocosWI"="Cocos"))
 meltall$HabitatType = revalue(meltall$HabitatType,c("NativesWI" = "Natives", "SandWI"="Unveg.","ScaevolaWI"="Scaevola","CocosWI"="Cocos"))
 
+### Makes column names correct
 colnames(meltkudallwiframe)[5] = 'SelectionRatio'
 colnames(meltkudallwiframe)[4] = "HabitatType"
 colnames(meltmcpallwiframe)[5] = 'SelectionRatio'
@@ -119,9 +127,12 @@ kud95statsAll = subset(meltkudallwiframe,type=="kud95")
 kud95stats = subset(meltkudallwiframe,type=="kud95" & (HabitatType == "CocosWI" | HabitatType=="NativesWI"))
 
 
+#### STOP RUNNING CODE HERE IF ALL WE WANT IS CRAB PLOTS. EVERYTHING AFTER THIS IS CONSTRUCTING A GIANT RDS OBJECT CONTAINING
+#### ALL THE P VALUES AND TESTS WE HAVE EVER TRIED - NOT USEFUL FOR PLOTTING YET 
 
-
+if (FALSE) {
 ######STARTS STATS HERE #######
+
 CrabStatsList <- list()
 
 #### Mixed model to detect differences in selection ratio for habitat type - Does habitat type impact selection ratio? (Yes)
@@ -186,8 +197,8 @@ mean(subset(kudmedwiframe,CrabNum%in%MaleCrabs)$'95NativesWI')
 mean(subset(kudmedwiframe,CrabNum%in%FemaleCrabs)$'95NativesWI')
 
 wilcox.test(subset(kud95stats,HabitatType=="CocosWI")$SelectionRatio, mu = 1, alternative = "two.sided")
+
 #t.test(subset(kud95stats,HabitatType=="CocosWI")$SelectionRatio, mu = 1, alternative = "two.sided")
-
 #saveRDS(CrabStatsList,"8.8CrabStatsList.RDS")
-
-crabStatsList <- readRDS("8.8CrabStatsList.RDS")
+#crabStatsList <- readRDS("8.8CrabStatsList.RDS")
+}
