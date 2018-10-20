@@ -6,9 +6,9 @@ library(tmap)
 glcmnames <- readRDS("GLCMNames.rdat")
 
 #Generates all-island water mask
-colorNormFrame = data.frame(matrix(nrow=6,ncol=4))
-colnames(colorNormFrame) <- c("Red","Green","Blue","IR")
-rownames(colorNormFrame) <- c("MeanPalmyra","STDevPalmyra","MeanTeraina","STDevTeraina","MeanFanning","STDevFanning")
+#colorNormFrame = data.frame(matrix(nrow=6,ncol=4))
+#colnames(colorNormFrame) <- c("Red","Green","Blue","IR")
+#rownames(colorNormFrame) <- c("MeanPalmyra","STDevPalmyra","MeanTeraina","STDevTeraina","MeanFanning","STDevFanning")
 
 palmyra <-brick("8-24-11x11wateryPalmyra.tif")
 teraina <-brick("8-24-11x11wateryTeraina.tif")
@@ -41,21 +41,21 @@ names(palmyra) <- glcmnames[c(1:4,26:32)]
   #setValues(fanning,value=NA,index= which(highFilter[,] == 1))
 #}
 
-for(color in colnames(colorNormFrame)) {
-  print(color)
-  print("Palmyra")
-  colorNormFrame["MeanPalmyra",color] <- cellStats(subset(palmyra,color),stat="mean")
-  colorNormFrame["STDevPalmyra",color] <- cellStats(subset(palmyra,color),stat="sd")
-  print("Teraina")
-  colorNormFrame["MeanTeraina",color] <- cellStats(subset(teraina,color),stat="mean")
-  colorNormFrame["STDevTeraina",color] <- cellStats(subset(teraina,color),stat="sd")
-  print("Fanning")
-  colorNormFrame["MeanFanning",color] <- cellStats(subset(fanning,color),stat="mean")
-  colorNormFrame["STDevFanning",color] <- cellStats(subset(fanning,color),stat="sd")
-}
-write.csv(colorNormFrame,"8-28-18PalmTerainaFanningColorsStatistics.csv")
+#for(color in colnames(colorNormFrame)) {
+#  print(color)
+#  print("Palmyra")
+#  colorNormFrame["MeanPalmyra",color] <- cellStats(subset(palmyra,color),stat="mean")
+#  colorNormFrame["STDevPalmyra",color] <- cellStats(subset(palmyra,color),stat="sd")
+#  print("Teraina")
+#  colorNormFrame["MeanTeraina",color] <- cellStats(subset(teraina,color),stat="mean")
+#  colorNormFrame["STDevTeraina",color] <- cellStats(subset(teraina,color),stat="sd")
+#  print("Fanning")
+#  colorNormFrame["MeanFanning",color] <- cellStats(subset(fanning,color),stat="mean")
+#  colorNormFrame["STDevFanning",color] <- cellStats(subset(fanning,color),stat="sd")
+#}
+#write.csv(colorNormFrame,"8-28-18PalmTerainaFanningColorsStatistics.csv")
 
-
+if (FALSE) {
 plotRGB(fanning,r=1,g=2,b=3)
 for(color in colnames(colorNormFrame)) {
   print(color)
@@ -80,7 +80,10 @@ for(color in colnames(colorNormFrame)) {
 writeRaster(palmyra,"8-29-11x11NORMwateryPalmyra.tif")
 writeRaster(teraina,"8-29-11x11NORMwateryTeraina.tif")
 writeRaster(fanning,"8-29-11x11NORMwateryFanning.tif")
-
+}
+#fanning <- brick("8-29-11x11NORMwateryFanning.tif")
+#teraina <- brick("8-29-11x11NORMwateryFanning.tif")
+#palmyra <- brick("8-29-11x11NORMwateryFanning.tif")
 
 ### FANNING ####
 fanningTrainingDataOrig <- readOGR(dsn = "FanningTraining.shp", layer = "FanningTraining")
@@ -127,7 +130,7 @@ allTrainingData = rbind(palmyraTrainingData@data,terainaTrainingData@data,fannin
 #### LEARNS GENERALIZABLE WATER MASK ####
 ### Classify based on bands: RGB, IR, IR GLCM
 rf.mdl.mask <- randomForest(x=allTrainingData[,c(6:13)], y=as.factor(allTrainingData[,"isWater"]), ntree=500, importance=TRUE, progress="window")
-saveRDS(rf.mdl.mask,"8.29WATERNORMrandomForestSMPalmTerrFann.RDS")
+#saveRDS(rf.mdl.mask,"10.13WATERNNrandomForestSMPalmTerrFann.RDS")
 
 palmyramask = predict(palmyra, rf.mdl.mask, filename="8.29-SMPalmyraWaterMask.tif", type="response", index=1, na.rm=TRUE, progress="window", overwrite=TRUE)
 plot(palmyramask)

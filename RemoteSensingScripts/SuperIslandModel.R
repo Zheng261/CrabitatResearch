@@ -7,11 +7,12 @@ library(tmap)
 glcmnames <- readRDS("GLCMNames.rdat")
 fanning <- brick("8.22-11x11WaterTrimmedFanning.tif")
 teraina <- brick("8.22-11x11WaterTrimmedTeraina.tif")
-palmyra <- brick("8.22-11x11TrimmedPalmyra.tif")
+palmyra <- brick("8.22-11x11WaterTrimmedPalmyra.tif")
 names(fanning) <- glcmnames
 names(teraina) <- glcmnames
 names(palmyra) <- glcmnames
 
+### STARTS COMPILING ALL ISLAND DATA TO TRAIN AGAIN ###
 ### FANNING ####
 fanningTrainingDataOrig <- readOGR(dsn = "FanningTraining.shp", layer = "FanningTraining")
 proj4string(fanningTrainingDataOrig) <- CRS("+proj=utm +zone=4 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
@@ -78,12 +79,21 @@ bandOrderInfo <- read.csv("8.22OrderOfImportanceALLISLANDBands.csv")
 #as.character(bandOrderInfo[c(1:24),1])
 rf.mdl <-randomForest(x=allTrainingData[,as.character(bandOrderInfo[c(1:24),1])],y=as.factor(droplevels(allTrainingData[,"Class"])),ntree=2000,na.action=na.omit, importance=TRUE, progress="window")
 
+
+#####
+rf.mdl <- readRDS("8.24randomForestSMPalmTerrFann.RDS")
+#####
+
+
 # Check error convergence. These "Out of bag" errors are a built in feature of random forest that tells you roughly how well your algorithm is doing
 #plot(rf.mdl, main="Out-of-bag errors for 16-feature RF model")#, xlab="Number of trees grown", ylab="OOB error")
 
 PalmyraPred <- predict(palmyra, rf.mdl, type="response", filename="8.24-11x11SMPalmyra.tif",index=1, na.rm=TRUE, progress="window", overwrite=TRUE)
 TerainaPred <- predict(teraina, rf.mdl, type="response", filename="8.24-11x11SMTeraina.tif",index=1, na.rm=TRUE, progress="window", overwrite=TRUE)
 FanningPred <- predict(fanning, rf.mdl, type="response", filename="8.24-11x11SMFanning.tif",index=1, na.rm=TRUE, progress="window", overwrite=TRUE)
+
+plot(FanningPred)
+
 
 varImpPlot(rf.mdl, sort=TRUE, type=2, scale=TRUE)
 #View(importance(rf.mdl))
@@ -169,7 +179,6 @@ for (i in 1:nrow(testconf)) {
 View(testconf)
 mean(testconf$Accuracy)
 mean(testconf$Precision)
-
 saveRDS(rf.mdl,"8.24randomForestSMPalmTerrFann.RDS")
 
 ## PlanetScope Data ##
