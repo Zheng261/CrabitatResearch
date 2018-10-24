@@ -130,6 +130,7 @@ allTrainingData = rbind(palmyraTrainingData@data,terainaTrainingData@data,fannin
 #### LEARNS GENERALIZABLE WATER MASK ####
 ### Classify based on bands: RGB, IR, IR GLCM
 rf.mdl.mask <- randomForest(x=allTrainingData[,c(6:13)], y=as.factor(allTrainingData[,"isWater"]), ntree=500, importance=TRUE, progress="window")
+### Not normalized ####
 #saveRDS(rf.mdl.mask,"10.13WATERNNrandomForestSMPalmTerrFann.RDS")
 
 palmyramask = predict(palmyra, rf.mdl.mask, filename="8.29-SMPalmyraWaterMask.tif", type="response", index=1, na.rm=TRUE, progress="window", overwrite=TRUE)

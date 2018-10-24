@@ -13,6 +13,7 @@ names(teraina) <- glcmnames
 names(palmyra) <- glcmnames
 
 ### STARTS COMPILING ALL ISLAND DATA TO TRAIN AGAIN ###
+
 ### FANNING ####
 fanningTrainingDataOrig <- readOGR(dsn = "FanningTraining.shp", layer = "FanningTraining")
 proj4string(fanningTrainingDataOrig) <- CRS("+proj=utm +zone=4 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
@@ -50,26 +51,8 @@ colnames(palmyraTrainingData@data) <- c("Class","isWater")
 palmyraTrainingData@data = data.frame(palmyraTrainingData@data, dataSet[match(rownames(palmyraTrainingData@data), rownames(dataSet)),])
 
 ## Removes NAs
-palmyraTrainingData@data = palmyraTrainingData@data[complete.cases(palmyraTrainingData@data),]
-terainaTrainingData@data = terainaTrainingData@data[complete.cases(terainaTrainingData@data),]
-fanningTrainingData@data = fanningTrainingData@data[complete.cases(fanningTrainingData@data),]
 allTrainingData = rbind(palmyraTrainingData@data,terainaTrainingData@data,fanningTrainingData@data)
-
-#### LEARNS GENERALIZABLE WATER MASK ####
-### Classify based on bands: RGB, IR, IR GLCM
-#rf.mdl.mask <- randomForest(x=allTrainingData[,c(3:6,28:34)], y=as.factor(allTrainingData[,"isWater"]), ntree=500, importance=TRUE, progress="window")
-# Classify the image with the above RF model that targets only LAND vs WATER
-#palmyramask = predict(palmyra, rf.mdl.mask, filename="8.24-SMPalmyraWaterMask.tif", type="response", index=1, na.rm=TRUE, progress="window", overwrite=TRUE)
-#plot(palmyramask)
-#varImpPlot(rf.mdl.mask, sort=TRUE, type=2, scale=TRUE)
-#View(importance(rf.mdl))
-#crappyLandvWater = raster("8.21-FanningWaterMask.tif")
-#This kind of takes forever and idk why
-#crappyLandOnly = raster::mask(testimg,crappyLandvWater,filename="8.22-WaterTrimmedFanning.tif",maskvalue=2,updatevalue=NA,overwrite=TRUE)
-#names(crappyLandOnly) <- names(testimg)
-#plotRGB(crappyLandOnly,r=1,b=2,g=3,stretch="hist")
-#subset(crappyLandOnly,1)
-#dev.off()
+allTrainingData = allTrainingData[complete.cases(allTrainingData),]
 
 ## REMOVES ALL WATER FROM TRAINING SET ###
 allTrainingData= subset(allTrainingData,Class!=4 & Class!=3)
