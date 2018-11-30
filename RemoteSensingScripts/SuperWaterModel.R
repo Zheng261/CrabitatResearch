@@ -81,6 +81,10 @@ writeRaster(palmyra,"8-29-11x11NORMwateryPalmyra.tif")
 writeRaster(teraina,"8-29-11x11NORMwateryTeraina.tif")
 writeRaster(fanning,"8-29-11x11NORMwateryFanning.tif")
 }
+
+
+
+
 #fanning <- brick("8-29-11x11NORMwateryFanning.tif")
 #teraina <- brick("8-29-11x11NORMwateryFanning.tif")
 #palmyra <- brick("8-29-11x11NORMwateryFanning.tif")
@@ -113,7 +117,6 @@ palmyraTrainingDataOrig  <- readOGR(dsn = "/volumes/Seagate 4tb/Palmyra Remote S
 palmyraTrainingDataOrig = spTransform(palmyraTrainingDataOrig,"+proj=utm +zone=3 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 palmyraTrainingData <- palmyraTrainingDataOrig[,-1] #removing some extra coordinate columns...
 palmyraTrainingData <- palmyraTrainingData[,-1]
-
 #You get a warning here for some NA points. I'm not sure why this happens but I just remove them and then it works fine. Perhaps one of the points
 #was accidentally classified as water and removed.
 dataSet <- as.data.frame(extract(palmyra, palmyraTrainingData))
@@ -121,11 +124,21 @@ palmyraTrainingData@data = cbind(palmyraTrainingData@data,palmyraTrainingData@da
 colnames(palmyraTrainingData@data) <- c("Class","isWater")
 palmyraTrainingData@data = data.frame(palmyraTrainingData@data, dataSet[match(rownames(palmyraTrainingData@data), rownames(dataSet)),])
 
+
+### Others
+#IslandNames = ["Pukarua","Nauru"]
+
+
+
 ## Removes NAs
 palmyraTrainingData@data = palmyraTrainingData@data[complete.cases(palmyraTrainingData@data),]
 terainaTrainingData@data = terainaTrainingData@data[complete.cases(terainaTrainingData@data),]
 fanningTrainingData@data = fanningTrainingData@data[complete.cases(fanningTrainingData@data),]
+
+
 allTrainingData = rbind(palmyraTrainingData@data,terainaTrainingData@data,fanningTrainingData@data)
+saveRDS(allTrainingData,"10.18AllTrainingData.rdat")
+
 
 #### LEARNS GENERALIZABLE WATER MASK ####
 ### Classify based on bands: RGB, IR, IR GLCM

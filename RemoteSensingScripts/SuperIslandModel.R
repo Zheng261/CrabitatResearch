@@ -50,17 +50,23 @@ palmyraTrainingData@data = cbind(palmyraTrainingData@data,palmyraTrainingData@da
 colnames(palmyraTrainingData@data) <- c("Class","isWater")
 palmyraTrainingData@data = data.frame(palmyraTrainingData@data, dataSet[match(rownames(palmyraTrainingData@data), rownames(dataSet)),])
 
-## Removes NAs
+
+## Binds everything together
 allTrainingData = rbind(palmyraTrainingData@data,terainaTrainingData@data,fanningTrainingData@data)
+
+## Removes NAs
 allTrainingData = allTrainingData[complete.cases(allTrainingData),]
 
 ## REMOVES ALL WATER FROM TRAINING SET ###
 allTrainingData= subset(allTrainingData,Class!=4 & Class!=3)
+saveRDS(allTrainingData,"10.18AllLandTrainingData.rdat")
 
 #Reads in info containing how important each band is in determining accuracy 
 bandOrderInfo <- read.csv("8.22OrderOfImportanceALLISLANDBands.csv")
 #as.character(bandOrderInfo[c(1:24),1])
 rf.mdl <-randomForest(x=allTrainingData[,as.character(bandOrderInfo[c(1:24),1])],y=as.factor(droplevels(allTrainingData[,"Class"])),ntree=2000,na.action=na.omit, importance=TRUE, progress="window")
+
+
 
 
 #####

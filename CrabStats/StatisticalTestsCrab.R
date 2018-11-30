@@ -15,7 +15,6 @@ ftable = drop1(fit, ~. ,test="Chisq")
 ftable
 
 wilcox.test(subset(meltHourlyTrackDataDF,variable=="NativesWI")$value, subset(meltHourlyTrackDataDF,variable=="CocosWI")$value)
-
 t.test(subset(meltHourlyTrackDataDF,variable=="NativesWI")$value, subset(meltHourlyTrackDataDF,variable=="CocosWI")$value)
 
 
