@@ -9,6 +9,8 @@ install.packages("lemon")
 install.packages("knitr")
 install.packages("prettymapr")
 install.packages("RStoolbox")
+install.packages("glcm")
+install.packages("maptools")
 
 
 #Run this file before running anything else!!!! Imports all the files needed for remote sensing and GPS data processing
@@ -34,4 +36,5 @@ library(lemon)
 library(knitr)
 library(prettymapr)
 library("raster")
+library(tcltk)
 library(glcm)

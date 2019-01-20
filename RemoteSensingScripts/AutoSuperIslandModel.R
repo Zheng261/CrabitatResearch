@@ -1,5 +1,6 @@
-Islands = c("Niutao","Nauru","Pukarua","Nanumanga")
+setwd("/volumes/Seagate 4tb/Pacific-islands-planet-imagery")
 
+Islands = c("Niutao","Nauru","Pukarua","Nanumanga")
 appendDate = ""
 addDateToStart = FALSE
 if (addDateToStart) {
@@ -29,13 +30,12 @@ for (Island in Islands) {
   Dataset = Dataset[complete.cases(Dataset),]
   ### Classify based on bands: RGB, IR,
   allLandTrainingData = rbind(allLandTrainingData,subset(Dataset,isWater != TRUE))
-  allTrainingData = rbind(allTrainingData,Dataset[c(1:6,28:34)])
+  allTrainingData = rbind(allTrainingData,Dataset)
 }
-
 rf.mdl.mask <- randomForest(x=allTrainingData[,c(6:13)], y=as.factor(allTrainingData[,"isWater"]), ntree=400, importance=TRUE, progress="window")
 saveRDS(rf.mdl.mask,"11.4WATERNNrandomForestSMPalmTerrFann.RDS")
 
 bandOrderInfo <- read.csv("8.22OrderOfImportanceALLISLANDBands.csv")
 rf.mdl <-randomForest(x=allLandTrainingData[,as.character(bandOrderInfo[c(1:24),1])],y=as.factor(droplevels(allLandTrainingData[,"Class"])),ntree=2000,na.action=na.omit, importance=TRUE, progress="window")
-saveRDS(rf.mdl,"11.4LANDrandomForestSMPalmTerrFann.RDS")
+saveRDS(rf.mdl,"1.15LANDrandomForestSMPalmTerrFann.RDS")
 
